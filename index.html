@@ -1,0 +1,1850 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>銷售修煉場 - Sales Dojo</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+/* ===== RESET & BASE ===== */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0e1a;--bg2:#111827;--bg3:#1a2035;
+  --gold:#fbbf24;--gold2:#f59e0b;--orange:#f97316;--fire:#ef4444;
+  --blue:#3b82f6;--cyan:#06b6d4;--purple:#8b5cf6;--green:#22c55e;
+  --text:#e5e7eb;--text2:#9ca3af;--text3:#6b7280;
+  --card-bg:#1e293b;--card-border:#334155;
+}
+body{font-family:'Noto Serif TC',serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+button{font-family:inherit;cursor:pointer;border:none;outline:none}
+a{color:var(--gold);text-decoration:none}
+
+/* ===== WELCOME SCREEN ===== */
+#welcome-screen{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .8s}
+#welcome-screen.hidden{opacity:0;pointer-events:none}
+#welcome-screen h1{font-size:3rem;color:var(--gold);text-shadow:0 0 30px rgba(251,191,36,.5);margin-bottom:.5rem;animation:pulse-glow 2s infinite}
+#welcome-screen .subtitle{color:var(--text2);font-size:1.1rem;margin-bottom:2rem}
+#welcome-screen .coach-big{font-size:6rem;margin-bottom:1rem;animation:bounce-in .8s}
+#welcome-screen input{background:var(--bg3);border:2px solid var(--gold);color:var(--gold);padding:.8rem 1.5rem;font-size:1.2rem;border-radius:12px;text-align:center;width:280px;margin-bottom:1.5rem}
+#welcome-screen input::placeholder{color:var(--text3)}
+#welcome-screen .start-btn{background:linear-gradient(135deg,var(--gold),var(--orange));color:#000;font-size:1.3rem;font-weight:900;padding:1rem 3rem;border-radius:16px;transition:all .3s;box-shadow:0 0 20px rgba(251,191,36,.3)}
+#welcome-screen .start-btn:hover{transform:scale(1.05);box-shadow:0 0 40px rgba(251,191,36,.5)}
+
+/* ===== TOP STATUS BAR ===== */
+#status-bar{position:sticky;top:0;z-index:100;background:linear-gradient(180deg,var(--bg2),transparent);backdrop-filter:blur(12px);padding:12px 24px;display:flex;align-items:center;gap:16px;border-bottom:1px solid var(--card-border)}
+.player-info{display:flex;align-items:center;gap:10px}
+.player-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--orange));display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:900;color:#000}
+.player-name{font-weight:700;font-size:1rem}
+.player-title{color:var(--gold);font-size:.8rem;font-weight:700}
+.level-badge{background:linear-gradient(135deg,var(--gold),var(--orange));color:#000;font-weight:900;padding:2px 10px;border-radius:20px;font-size:.85rem}
+.exp-bar-wrap{flex:1;max-width:300px}
+.exp-label{font-size:.7rem;color:var(--text2);display:flex;justify-content:space-between;margin-bottom:2px}
+.exp-bar{height:8px;background:var(--bg);border-radius:8px;overflow:hidden}
+.exp-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--orange));border-radius:8px;transition:width .8s ease;width:0%}
+.stats{display:flex;gap:16px;margin-left:auto;font-size:.85rem}
+.stat{display:flex;align-items:center;gap:4px;color:var(--text2)}
+.stat .icon{font-size:1.1rem}
+
+/* ===== NAV TABS ===== */
+.nav-tabs{display:flex;justify-content:center;gap:8px;padding:12px;background:var(--bg2)}
+.nav-tab{padding:8px 20px;border-radius:10px;background:var(--bg3);color:var(--text2);font-weight:700;font-size:.9rem;transition:all .3s}
+.nav-tab.active,.nav-tab:hover{background:linear-gradient(135deg,var(--gold),var(--orange));color:#000}
+
+/* ===== MAP VIEW ===== */
+#map-view{padding:40px 20px;max-width:600px;margin:0 auto;position:relative}
+.map-path{position:relative;display:flex;flex-direction:column;align-items:center;gap:0}
+.map-connector{width:4px;height:40px;background:var(--card-border);position:relative}
+.map-connector.completed{background:linear-gradient(180deg,var(--gold),var(--orange))}
+.map-node{position:relative;width:100%;display:flex;align-items:center;justify-content:center;padding:6px 0}
+.map-node:nth-child(4n+1) .node-inner{margin-left:80px}
+.map-node:nth-child(4n+3) .node-inner{margin-right:80px}
+.node-inner{display:flex;align-items:center;gap:16px;padding:16px 24px;border-radius:20px;background:var(--card-bg);border:2px solid var(--card-border);cursor:pointer;transition:all .3s;width:fit-content;max-width:420px}
+.node-inner:hover{transform:translateY(-3px);box-shadow:0 8px 30px rgba(0,0,0,.4)}
+.node-inner.locked{opacity:.45;cursor:not-allowed;filter:grayscale(.8)}
+.node-inner.active{border-color:var(--gold);box-shadow:0 0 20px rgba(251,191,36,.2);animation:pulse-border 2s infinite}
+.node-inner.completed{border-color:var(--green);background:linear-gradient(135deg,rgba(34,197,94,.08),var(--card-bg))}
+.node-icon{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;flex-shrink:0}
+.node-info h3{font-size:1rem;margin-bottom:2px}
+.node-info .node-sub{font-size:.78rem;color:var(--text2)}
+.node-status{margin-left:auto;font-size:1.2rem}
+
+/* ===== STAGE DETAIL VIEW ===== */
+#stage-view{display:none;padding:20px;max-width:800px;margin:0 auto}
+.stage-back{background:var(--bg3);color:var(--text);padding:8px 16px;border-radius:10px;font-size:.9rem;margin-bottom:16px;display:inline-flex;align-items:center;gap:6px}
+.stage-header{text-align:center;margin-bottom:24px}
+.stage-header .stage-icon{font-size:3rem;margin-bottom:8px}
+.stage-header h2{font-size:1.6rem;color:var(--gold);margin-bottom:4px}
+.stage-header .stage-goal{color:var(--text2);font-size:.9rem;line-height:1.6}
+
+/* Coach Speech Bubble */
+.coach-speech{background:linear-gradient(135deg,#1a1a2e,#16213e);border:2px solid var(--orange);border-radius:20px;padding:20px 24px;margin-bottom:28px;position:relative}
+.coach-speech::before{content:'';position:absolute;top:-12px;left:30px;border:8px solid transparent;border-bottom-color:var(--orange)}
+.coach-speech .coach-avatar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.coach-speech .coach-avatar-row .avatar{font-size:1.6rem}
+.coach-speech .coach-avatar-row .name{font-weight:900;color:var(--orange);font-size:.9rem}
+.coach-speech .speech-text{color:var(--text);font-size:.95rem;line-height:1.8}
+.coach-speech .speech-text .highlight{color:var(--gold);font-weight:900}
+
+/* Section Titles */
+.section-title{font-size:1.1rem;font-weight:900;margin:24px 0 12px;display:flex;align-items:center;gap:8px;color:var(--gold)}
+
+/* Skill Cards Grid */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:24px}
+.skill-card{perspective:800px;height:200px;cursor:pointer}
+.skill-card-inner{position:relative;width:100%;height:100%;transition:transform .6s;transform-style:preserve-3d}
+.skill-card.flipped .skill-card-inner{transform:rotateY(180deg)}
+.skill-card-front,.skill-card-back{position:absolute;inset:0;backface-visibility:hidden;border-radius:16px;padding:16px;display:flex;flex-direction:column}
+.skill-card-front{background:linear-gradient(135deg,#1a1a2e,#0f172a);border:2px solid var(--card-border);align-items:center;justify-content:center;text-align:center}
+.skill-card-front .card-mystery{font-size:3rem;margin-bottom:8px;opacity:.6}
+.skill-card-front .card-rarity{font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:2px}
+.skill-card-back{background:linear-gradient(135deg,#1e293b,#0f172a);border:2px solid var(--gold);transform:rotateY(180deg);justify-content:space-between}
+.skill-card-back .card-title{font-size:.85rem;font-weight:900;color:var(--gold);margin-bottom:6px}
+.skill-card-back .card-content{font-size:.78rem;color:var(--text);line-height:1.6;flex:1;overflow-y:auto}
+.skill-card-back .card-collected{text-align:right;font-size:.7rem;color:var(--green);font-weight:700}
+.rarity-rare .skill-card-front{border-color:var(--blue)}
+.rarity-rare .skill-card-back{border-color:var(--blue)}
+.rarity-legend .skill-card-front{border-color:var(--gold);box-shadow:0 0 15px rgba(251,191,36,.15)}
+.rarity-legend .skill-card-back{border-color:var(--gold);box-shadow:0 0 15px rgba(251,191,36,.15)}
+
+/* Video List + Accordion */
+.video-list{display:flex;flex-direction:column;gap:10px;margin-bottom:24px}
+.video-guide{max-height:0;overflow:hidden;transition:max-height .4s ease,padding .3s;padding:0 16px;background:linear-gradient(135deg,rgba(59,130,246,.05),var(--card-bg));border-radius:0 0 14px 14px;margin-top:-2px;border:1px solid transparent}
+.video-guide.open{max-height:600px;padding:14px 16px;border-color:var(--card-border);border-top:none}
+.video-guide .guide-row{display:flex;gap:8px;margin-bottom:10px;font-size:.82rem;line-height:1.7}
+.video-guide .guide-row:last-child{margin-bottom:0}
+.video-guide .guide-icon{flex-shrink:0;font-size:1rem;margin-top:2px}
+.video-guide .guide-label{font-weight:900;color:var(--gold);min-width:70px;flex-shrink:0}
+.video-guide .guide-text{color:var(--text)}
+.video-guide .guide-quote{color:var(--orange);font-style:italic}
+.video-guide-btn{display:flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(59,130,246,.1);border:1px solid var(--blue);border-radius:8px;font-size:.72rem;color:var(--blue);font-weight:700;margin-top:4px;cursor:pointer;transition:all .2s}
+.video-guide-btn:hover{background:rgba(59,130,246,.2)}
+.video-item{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--card-bg);border-radius:14px;border:1px solid var(--card-border);transition:all .3s;cursor:pointer}
+.video-item:hover{border-color:var(--blue);transform:translateX(4px)}
+.video-item.watched{border-color:var(--green);background:linear-gradient(135deg,rgba(34,197,94,.05),var(--card-bg))}
+.video-item.must-watch{border-color:var(--gold);border-width:2px}
+.video-thumb{width:48px;height:48px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0}
+.video-info{flex:1;min-width:0}
+.video-info .video-title{font-size:.85rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.video-info .video-badge{display:inline-block;font-size:.65rem;padding:1px 6px;border-radius:6px;font-weight:700;margin-top:2px}
+.badge-must{background:var(--gold);color:#000}
+.badge-watched{background:var(--green);color:#000}
+.video-check{width:28px;height:28px;border-radius:50%;border:2px solid var(--card-border);display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;transition:all .3s}
+.video-item.watched .video-check{background:var(--green);border-color:var(--green);color:#000}
+
+/* Boss Battle */
+.boss-section{background:linear-gradient(135deg,rgba(239,68,68,.08),var(--card-bg));border:2px solid var(--fire);border-radius:20px;padding:24px;margin-top:24px}
+.boss-header{text-align:center;margin-bottom:16px}
+.boss-header .boss-icon{font-size:3rem;animation:boss-float 3s ease-in-out infinite}
+.boss-header h3{color:var(--fire);font-size:1.2rem;margin-top:4px}
+.boss-header p{color:var(--text2);font-size:.85rem}
+.quiz-question{background:var(--bg3);border-radius:14px;padding:16px;margin-bottom:12px}
+.quiz-question .q-text{font-size:.9rem;font-weight:700;margin-bottom:10px}
+.quiz-options{display:flex;flex-direction:column;gap:6px}
+.quiz-opt{padding:10px 14px;background:var(--card-bg);border:1px solid var(--card-border);border-radius:10px;font-size:.85rem;text-align:left;color:var(--text);transition:all .3s}
+.quiz-opt:hover{border-color:var(--blue);background:rgba(59,130,246,.1)}
+.quiz-opt.correct{border-color:var(--green);background:rgba(34,197,94,.15);color:var(--green)}
+.quiz-opt.wrong{border-color:var(--fire);background:rgba(239,68,68,.15);color:var(--fire)}
+.quiz-opt.disabled{pointer-events:none;opacity:.6}
+.boss-result{text-align:center;padding:20px;display:none}
+.boss-result h3{font-size:1.3rem;margin-bottom:8px}
+.boss-result .result-btn{margin-top:12px;padding:10px 28px;border-radius:12px;font-weight:900;font-size:1rem}
+
+/* ===== COLLECTION VIEW ===== */
+#collection-view{display:none;padding:20px;max-width:900px;margin:0 auto}
+.collection-stage{margin-bottom:28px}
+.collection-stage-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.collection-stage-header h3{font-size:1rem;color:var(--gold)}
+.collection-progress{font-size:.8rem;color:var(--text2);margin-left:auto}
+.collection-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:660px;margin:0 auto}
+.mini-card{padding:12px;background:var(--card-bg);border-radius:12px;border:1px solid var(--card-border);font-size:.78rem;text-align:center;min-height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.mini-card.collected{border-color:var(--gold);background:linear-gradient(135deg,rgba(251,191,36,.05),var(--card-bg))}
+.mini-card.locked{opacity:.3;filter:grayscale(1)}
+.mini-card .mini-icon{font-size:1.4rem;margin-bottom:4px}
+.mini-card .mini-name{font-weight:700;font-size:.75rem}
+
+/* ===== COACH CHAT BUBBLE ===== */
+#coach-bubble{position:fixed;bottom:20px;right:20px;z-index:200}
+#coach-toggle{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--fire));display:flex;align-items:center;justify-content:center;font-size:2rem;box-shadow:0 4px 20px rgba(249,115,22,.4);transition:all .3s;animation:coach-pulse 3s infinite}
+#coach-toggle:hover{transform:scale(1.1)}
+#coach-chat{display:none;position:absolute;bottom:76px;right:0;width:340px;background:var(--bg2);border:2px solid var(--orange);border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,.5);overflow:hidden}
+#coach-chat.open{display:block;animation:slide-up .3s}
+.chat-header{background:linear-gradient(135deg,var(--orange),var(--fire));padding:12px 16px;display:flex;align-items:center;gap:8px;color:#000;font-weight:900}
+.chat-messages{height:260px;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+.chat-msg{max-width:85%;padding:10px 14px;border-radius:14px;font-size:.82rem;line-height:1.6}
+.chat-msg.coach{background:var(--bg3);border:1px solid var(--card-border);align-self:flex-start;border-bottom-left-radius:4px}
+.chat-msg.player{background:linear-gradient(135deg,var(--blue),var(--purple));align-self:flex-end;border-bottom-right-radius:4px}
+.chat-options{padding:8px;border-top:1px solid var(--card-border);display:flex;flex-direction:column;gap:4px}
+.chat-opt-btn{padding:8px 12px;background:var(--bg3);border:1px solid var(--card-border);border-radius:10px;font-size:.78rem;color:var(--text);text-align:left;transition:all .2s}
+.chat-opt-btn:hover{border-color:var(--orange);background:rgba(249,115,22,.1)}
+
+/* ===== LEVEL UP OVERLAY ===== */
+#levelup-overlay{position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;flex-direction:column}
+#levelup-overlay.show{display:flex;animation:fade-in .3s}
+.levelup-content{text-align:center;animation:scale-bounce .6s}
+.levelup-content .lv-icon{font-size:5rem;margin-bottom:8px}
+.levelup-content .lv-text{font-size:1.2rem;color:var(--text2);margin-bottom:4px}
+.levelup-content .lv-title{font-size:2.5rem;font-weight:900;color:var(--gold);text-shadow:0 0 40px rgba(251,191,36,.5);margin-bottom:4px}
+.levelup-content .lv-subtitle{font-size:1.1rem;color:var(--orange);font-weight:700;margin-bottom:20px}
+.levelup-content .lv-btn{background:linear-gradient(135deg,var(--gold),var(--orange));color:#000;font-weight:900;padding:12px 36px;border-radius:14px;font-size:1.1rem}
+.levelup-sparks{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.spark{position:absolute;width:4px;height:4px;background:var(--gold);border-radius:50%;animation:spark-fly 1.5s ease-out forwards}
+
+/* ===== ANIMATIONS ===== */
+@keyframes pulse-glow{0%,100%{text-shadow:0 0 20px rgba(251,191,36,.4)}50%{text-shadow:0 0 40px rgba(251,191,36,.8)}}
+@keyframes pulse-border{0%,100%{box-shadow:0 0 10px rgba(251,191,36,.1)}50%{box-shadow:0 0 25px rgba(251,191,36,.3)}}
+@keyframes bounce-in{0%{transform:scale(0) rotate(-20deg)}60%{transform:scale(1.2) rotate(5deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes boss-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes coach-pulse{0%,100%{box-shadow:0 4px 20px rgba(249,115,22,.4)}50%{box-shadow:0 4px 35px rgba(249,115,22,.7)}}
+@keyframes slide-up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+@keyframes scale-bounce{0%{transform:scale(0)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes spark-fly{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0)}}
+@keyframes typewriter{from{width:0}to{width:100%}}
+
+/* ===== CARD REVIEW MODAL ===== */
+#card-modal-overlay{position:fixed;inset:0;z-index:9990;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;padding:20px}
+#card-modal-overlay.show{display:flex;animation:fade-in .3s}
+.card-modal{perspective:1000px;width:320px;height:420px}
+.card-modal-inner{position:relative;width:100%;height:100%;transition:transform .8s;transform-style:preserve-3d}
+.card-modal.flipping .card-modal-inner{transform:rotateY(180deg)}
+.card-modal-front,.card-modal-back{position:absolute;inset:0;backface-visibility:hidden;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px}
+.card-modal-front{background:linear-gradient(135deg,#1a1a2e,#0f172a);border:3px solid var(--card-border);text-align:center}
+.card-modal-front .cm-mystery{font-size:4rem;margin-bottom:12px}
+.card-modal-front .cm-tap{color:var(--text3);font-size:.85rem}
+.card-modal-back{background:linear-gradient(135deg,#1e293b,#0f172a);border:3px solid var(--gold);transform:rotateY(180deg);justify-content:flex-start;text-align:left;box-shadow:0 0 30px rgba(251,191,36,.2)}
+.card-modal-back .cm-rarity{font-size:.7rem;color:var(--orange);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;font-weight:900}
+.card-modal-back .cm-title{font-size:1.2rem;font-weight:900;color:var(--gold);margin-bottom:16px}
+.card-modal-back .cm-content{font-size:.92rem;color:var(--text);line-height:2;flex:1}
+.card-modal-back .cm-close{margin-top:16px;padding:8px 24px;background:linear-gradient(135deg,var(--gold),var(--orange));color:#000;font-weight:900;border-radius:10px;font-size:.85rem;align-self:center}
+.cm-legend .card-modal-back{border-color:var(--gold);box-shadow:0 0 35px rgba(251,191,36,.25)}
+.cm-rare .card-modal-back{border-color:var(--blue);box-shadow:0 0 30px rgba(59,130,246,.2)}
+
+/* Collection clickable */
+.mini-card.collected{cursor:pointer;transition:all .3s}
+.mini-card.collected:hover{transform:translateY(-4px);box-shadow:0 4px 20px rgba(251,191,36,.2);border-color:var(--gold)}
+
+/* ===== STAGE 8 - 宗師殿堂 ===== */
+#stage8-view{display:none;padding:20px;max-width:900px;margin:0 auto}
+
+/* Fireworks overlay */
+#fireworks-overlay{position:fixed;inset:0;z-index:9997;pointer-events:none;overflow:hidden;display:none}
+#fireworks-overlay.show{display:block}
+.firework{position:absolute;width:6px;height:6px;border-radius:50%;animation:firework-burst 1.5s ease-out forwards}
+@keyframes firework-burst{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--fx),var(--fy)) scale(0)}}
+
+/* Grand entrance */
+.grand-entrance{text-align:center;padding:40px 20px;animation:fade-in 1s}
+.grand-entrance .crown{font-size:5rem;animation:boss-float 3s ease-in-out infinite}
+.grand-entrance h1{font-size:2.4rem;color:var(--gold);text-shadow:0 0 40px rgba(251,191,36,.6);margin:12px 0 4px}
+.grand-entrance .grand-sub{color:var(--text2);font-size:1.1rem}
+
+/* Tribute Card */
+.tribute-card{background:linear-gradient(135deg,#1a1a2e,#0f172a);border:3px solid var(--gold);border-radius:24px;padding:32px;margin:28px 0;position:relative;overflow:hidden;box-shadow:0 0 40px rgba(251,191,36,.15)}
+.tribute-card::before{content:'';position:absolute;inset:-2px;border-radius:24px;background:linear-gradient(45deg,var(--gold),var(--orange),var(--gold),var(--orange));z-index:-1;animation:border-glow 4s linear infinite;background-size:300% 300%}
+@keyframes border-glow{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.tribute-header{display:flex;align-items:center;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.tribute-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--orange));display:flex;align-items:center;justify-content:center;font-size:2.8rem;box-shadow:0 0 25px rgba(251,191,36,.4);flex-shrink:0}
+.tribute-name-block h2{font-size:1.6rem;color:var(--gold);margin-bottom:2px}
+.tribute-name-block .tribute-title-tag{color:var(--orange);font-size:.85rem;font-weight:700}
+.tribute-bio{color:var(--text);font-size:.92rem;line-height:2;margin-bottom:20px}
+.tribute-bio .highlight{color:var(--gold);font-weight:900}
+.tribute-skills{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:20px}
+.tribute-skill{display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.2);border-radius:12px;font-size:.85rem;color:var(--gold);font-weight:700}
+.tribute-skill .sk-icon{font-size:1.2rem}
+.tribute-legendary{background:linear-gradient(135deg,rgba(251,191,36,.08),rgba(249,115,22,.08));border:2px solid var(--gold);border-radius:16px;padding:18px 20px;margin-bottom:16px}
+.tribute-legendary .leg-label{font-size:.75rem;color:var(--orange);font-weight:900;text-transform:uppercase;letter-spacing:2px;margin-bottom:6px}
+.tribute-legendary .leg-text{font-size:.95rem;color:var(--text);line-height:1.8}
+.tribute-legendary .leg-text .highlight{color:var(--gold);font-weight:900}
+.tribute-quote{text-align:center;padding:16px;font-size:1.05rem;color:var(--gold);font-style:italic;line-height:1.8;border-top:1px solid rgba(251,191,36,.2);margin-top:8px}
+
+/* Review Report */
+.review-report{margin:28px 0}
+.review-report h2{text-align:center;color:var(--gold);font-size:1.5rem;margin-bottom:20px}
+.report-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:24px}
+.report-stat{text-align:center;padding:16px 10px;background:var(--card-bg);border:1px solid var(--card-border);border-radius:16px}
+.report-stat .rs-icon{font-size:1.8rem;margin-bottom:4px}
+.report-stat .rs-value{font-size:1.6rem;font-weight:900;color:var(--gold)}
+.report-stat .rs-label{font-size:.75rem;color:var(--text2);margin-top:2px}
+.stage-recap{display:flex;flex-direction:column;gap:8px;margin-bottom:24px}
+.recap-row{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--card-bg);border-radius:12px;border:1px solid var(--card-border);font-size:.85rem}
+.recap-row .recap-icon{font-size:1.2rem;flex-shrink:0}
+.recap-row .recap-stage{font-weight:700;color:var(--gold);min-width:90px}
+.recap-row .recap-lesson{color:var(--text);flex:1}
+.recap-row .recap-check{color:var(--green);font-weight:700;flex-shrink:0}
+
+/* Graduation */
+.graduation{text-align:center;padding:24px;margin-top:12px}
+.graduation .grad-speech{background:linear-gradient(135deg,#1a1a2e,#16213e);border:2px solid var(--orange);border-radius:20px;padding:24px;margin-bottom:24px;font-size:.95rem;color:var(--text);line-height:2}
+.graduation .grad-speech .highlight{color:var(--gold);font-weight:900}
+.grad-buttons{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.grad-btn{padding:14px 32px;border-radius:14px;font-weight:900;font-size:1rem;transition:all .3s}
+.grad-btn:hover{transform:translateY(-2px)}
+.grad-btn.btn-retry{background:var(--bg3);color:var(--text);border:2px solid var(--card-border)}
+.grad-btn.btn-retry:hover{border-color:var(--fire)}
+.grad-btn.btn-share{background:linear-gradient(135deg,var(--gold),var(--orange));color:#000}
+.grad-btn.btn-share:hover{box-shadow:0 0 30px rgba(251,191,36,.4)}
+
+/* ===== RESPONSIVE - TABLET ===== */
+@media(max-width:1024px){
+  #stage-view,#stage8-view{max-width:95%;padding:16px}
+  #collection-view{max-width:95%;padding:16px}
+  .tribute-card{padding:24px}
+  .tribute-skills{grid-template-columns:repeat(2,1fr)}
+  .report-stats{grid-template-columns:repeat(3,1fr)}
+}
+
+/* ===== RESPONSIVE - MOBILE ===== */
+@media(max-width:640px){
+  /* Status bar */
+  #status-bar{flex-wrap:wrap;gap:8px;padding:8px 12px}
+  .exp-bar-wrap{order:10;width:100%;max-width:100%}
+  .stats{order:9;margin-left:0}
+  .level-badge{font-size:.75rem;padding:2px 8px}
+
+  /* Welcome */
+  #welcome-screen h1{font-size:2rem}
+  #welcome-screen .coach-big{font-size:4rem}
+  #welcome-screen input{width:240px;font-size:1rem;padding:.6rem 1rem}
+  #welcome-screen .start-btn{font-size:1.1rem;padding:.8rem 2rem}
+
+  /* Nav */
+  .nav-tabs{gap:6px;padding:8px}
+  .nav-tab{padding:7px 14px;font-size:.82rem}
+
+  /* Map */
+  #map-view{padding:20px 12px}
+  .map-node:nth-child(4n+1) .node-inner,.map-node:nth-child(4n+3) .node-inner{margin:0}
+  .node-inner{padding:12px 16px;gap:12px;max-width:100%}
+  .node-icon{width:44px;height:44px;font-size:1.4rem;border-radius:12px}
+  .node-info h3{font-size:.9rem}
+  .node-info .node-sub{font-size:.72rem}
+
+  /* Stage detail */
+  #stage-view{padding:12px;max-width:100%}
+  .stage-header .stage-icon{font-size:2.2rem}
+  .stage-header h2{font-size:1.3rem}
+  .stage-header .stage-goal{font-size:.82rem}
+  .coach-speech{padding:14px 16px;margin-bottom:20px}
+  .coach-speech .speech-text{font-size:.85rem;line-height:1.7}
+
+  /* Cards grid */
+  .cards-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .skill-card{height:170px}
+  .skill-card-front .card-mystery{font-size:2.2rem}
+  .skill-card-back .card-title{font-size:.78rem}
+  .skill-card-back .card-content{font-size:.72rem}
+
+  /* Video list */
+  .video-item{padding:10px 12px;gap:10px}
+  .video-thumb{width:40px;height:40px;font-size:1.2rem;border-radius:8px}
+  .video-info .video-title{font-size:.78rem}
+  .video-guide .guide-row{font-size:.76rem;flex-direction:column;gap:2px}
+  .video-guide .guide-label{min-width:auto}
+  .video-guide-btn{font-size:.68rem;padding:3px 8px}
+
+  /* Boss battle */
+  .boss-section{padding:16px;margin-top:16px;border-radius:16px}
+  .boss-header .boss-icon{font-size:2.2rem}
+  .boss-header h3{font-size:1rem}
+  .quiz-question{padding:12px}
+  .quiz-question .q-text{font-size:.82rem}
+  .quiz-opt{padding:8px 12px;font-size:.78rem}
+
+  /* Collection */
+  #collection-view{padding:12px}
+  .collection-grid{grid-template-columns:repeat(3,1fr);gap:10px;max-width:100%}
+  .mini-card{padding:10px 6px;min-height:70px}
+  .mini-card .mini-icon{font-size:1.1rem}
+  .mini-card .mini-name{font-size:.68rem}
+  .collection-stage-header h3{font-size:.9rem}
+
+  /* Card modal */
+  .card-modal{width:280px;height:380px}
+  .card-modal-front .cm-mystery{font-size:3rem}
+  .card-modal-back{padding:20px}
+  .card-modal-back .cm-title{font-size:1.05rem;margin-bottom:12px}
+  .card-modal-back .cm-content{font-size:.82rem;line-height:1.8}
+
+  /* Coach chat */
+  #coach-bubble{bottom:12px;right:12px}
+  #coach-toggle{width:54px;height:54px;font-size:1.7rem}
+  #coach-chat{width:calc(100vw - 24px);right:-4px;bottom:66px}
+  .chat-messages{height:220px;padding:10px}
+  .chat-msg{font-size:.78rem;padding:8px 12px}
+  .chat-opt-btn{font-size:.74rem;padding:7px 10px}
+
+  /* Stage 8 - 宗師殿堂 */
+  #stage8-view{padding:12px;max-width:100%}
+  .grand-entrance{padding:24px 12px}
+  .grand-entrance .crown{font-size:3.5rem}
+  .grand-entrance h1{font-size:1.6rem}
+  .grand-entrance .grand-sub{font-size:.9rem}
+
+  /* Tribute card */
+  .tribute-card{padding:18px;margin:16px 0;border-radius:18px}
+  .tribute-header{gap:12px}
+  .tribute-avatar{width:60px;height:60px;font-size:2rem}
+  .tribute-name-block h2{font-size:1.2rem}
+  .tribute-name-block .tribute-title-tag{font-size:.78rem}
+  .tribute-bio{font-size:.82rem;line-height:1.8}
+  .tribute-skills{grid-template-columns:1fr 1fr;gap:8px}
+  .tribute-skill{padding:8px 10px;font-size:.78rem}
+  .tribute-legendary{padding:14px 16px}
+  .tribute-legendary .leg-text{font-size:.85rem;line-height:1.7}
+  .tribute-quote{font-size:.9rem;padding:12px}
+
+  /* Review report */
+  .review-report h2{font-size:1.2rem}
+  .report-stats{grid-template-columns:repeat(2,1fr);gap:10px}
+  .report-stat{padding:12px 8px}
+  .report-stat .rs-icon{font-size:1.4rem}
+  .report-stat .rs-value{font-size:1.3rem}
+  .report-stat .rs-label{font-size:.68rem}
+  .recap-row{padding:8px 12px;font-size:.78rem;flex-wrap:wrap}
+  .recap-row .recap-stage{min-width:auto;font-size:.78rem}
+
+  /* Graduation */
+  .graduation{padding:16px}
+  .graduation .grad-speech{padding:16px;font-size:.85rem;line-height:1.8}
+  .grad-buttons{gap:10px}
+  .grad-btn{padding:12px 24px;font-size:.9rem}
+}
+
+/* ===== RESPONSIVE - SMALL PHONE ===== */
+@media(max-width:380px){
+  .cards-grid{grid-template-columns:1fr;gap:10px}
+  .collection-grid{grid-template-columns:repeat(2,1fr)}
+  .report-stats{grid-template-columns:1fr 1fr}
+  .tribute-skills{grid-template-columns:1fr}
+  .grad-buttons{flex-direction:column;align-items:center}
+  .grad-btn{width:100%;max-width:260px}
+  .node-inner{gap:10px;padding:10px 12px}
+  .node-icon{width:38px;height:38px;font-size:1.2rem}
+  .card-modal{width:260px;height:360px}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== WELCOME SCREEN ===== -->
+<div id="welcome-screen">
+  <div class="coach-big">🔥</div>
+  <h1>銷售修煉場</h1>
+  <p class="subtitle">Sales Dojo - 讓你的銷售力覺醒！</p>
+  <input type="text" id="player-name-input" placeholder="輸入你的名字，勇者" maxlength="12">
+  <button class="start-btn" onclick="startGame()">開始修煉！</button>
+</div>
+
+<!-- ===== STATUS BAR ===== -->
+<div id="status-bar" style="display:none">
+  <div class="player-info">
+    <div class="player-avatar" id="avatar-letter">?</div>
+    <div>
+      <div class="player-name" id="display-name">勇者</div>
+      <div class="player-title" id="display-title">見習業務</div>
+    </div>
+  </div>
+  <span class="level-badge" id="display-level">Lv.1</span>
+  <div class="exp-bar-wrap">
+    <div class="exp-label"><span>EXP</span><span id="exp-text">0 / 100</span></div>
+    <div class="exp-bar"><div class="exp-fill" id="exp-fill"></div></div>
+  </div>
+  <div class="stats">
+    <div class="stat"><span class="icon">🃏</span><span id="cards-count">0/21</span></div>
+    <div class="stat"><span class="icon">🔥</span><span id="streak-count">1</span></div>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="nav-tabs" id="nav-tabs" style="display:none">
+  <button class="nav-tab active" onclick="showView('map')">闖關地圖</button>
+  <button class="nav-tab" onclick="showView('collection')">卡牌圖鑑</button>
+</div>
+
+<!-- ===== MAP VIEW ===== -->
+<div id="map-view"></div>
+
+<!-- ===== STAGE DETAIL VIEW ===== -->
+<div id="stage-view"></div>
+
+<!-- ===== COLLECTION VIEW ===== -->
+<div id="collection-view"></div>
+
+<!-- ===== STAGE 8 VIEW ===== -->
+<div id="stage8-view"></div>
+
+<!-- ===== FIREWORKS OVERLAY ===== -->
+<div id="fireworks-overlay"></div>
+
+<!-- ===== CARD REVIEW MODAL ===== -->
+<div id="card-modal-overlay" onclick="closeCardModal()">
+  <div class="card-modal" id="card-modal" onclick="event.stopPropagation()">
+    <div class="card-modal-inner">
+      <div class="card-modal-front">
+        <div class="cm-mystery">🃏</div>
+        <div class="cm-tap">點擊翻牌</div>
+      </div>
+      <div class="card-modal-back">
+        <div class="cm-rarity" id="cm-rarity"></div>
+        <div class="cm-title" id="cm-title"></div>
+        <div class="cm-content" id="cm-content"></div>
+        <button class="cm-close" onclick="closeCardModal()">收好卡牌</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== COACH CHAT ===== -->
+<div id="coach-bubble" style="display:none">
+  <div id="coach-chat">
+    <div class="chat-header">🔥 教練 - 銷售修煉場</div>
+    <div class="chat-messages" id="chat-messages"></div>
+    <div class="chat-options" id="chat-options"></div>
+  </div>
+  <button id="coach-toggle" onclick="toggleChat()">🔥</button>
+</div>
+
+<!-- ===== LEVEL UP OVERLAY ===== -->
+<div id="levelup-overlay">
+  <div class="levelup-sparks" id="sparks-container"></div>
+  <div class="levelup-content">
+    <div class="lv-icon">⬆️</div>
+    <div class="lv-text">LEVEL UP!</div>
+    <div class="lv-title" id="lv-new-title"></div>
+    <div class="lv-subtitle" id="lv-new-level"></div>
+    <button class="lv-btn" onclick="closeLevelUp()">繼續修煉！</button>
+  </div>
+</div>
+
+<script>
+// ================================================================
+// DATA - 所有遊戲資料
+// ================================================================
+const STAGES = [
+  {
+    id:1, name:'心火試煉', icon:'🔥', color:'#ef4444',
+    subtitle:'入門心態建立與目標設定',
+    goal:'建立頂尖業務員的思維模式，克服對拒絕的恐懼，並學會設立明確且可衡量的目標。',
+    coachSpeech:'聽好了，小鬼！你以為銷售是天賦？錯！銷售是鍛鍊出來的鋼鐵意志！<span class="highlight">被拒絕100次，你就離成功更近100步！</span>從今天起，我要你記住三個字——「Go for no！」每一個「不」都是你變強的燃料！給我燃起來！🔥',
+    cards:[
+      {id:'c1-1',title:'尋求拒絕法則',rarity:'legend',content:'將遭到拒絕視為常態，你被拒絕得越多，獲得「好」的機會就越多。藉此克服對拒絕的恐懼。「Go for no!」—— 主動擁抱拒絕，讓恐懼消失！'},
+      {id:'c1-2',title:'SMART 目標術',rarity:'rare',content:'設定 SMART 目標並寫下來：具體（Specific）、可衡量（Measurable）、可達成（Achievable）、相關（Relevant）、有時限（Time-bound）。寫下來能將目標植入潛意識，大幅提升達成率。'},
+      {id:'c1-3',title:'100通電話法則',rarity:'legend',content:'以聯繫 100 位潛在客戶為目標，不把重點放在是否成交，藉此消除壓力並建立陌生開發的自信。重點不是結果，是練習！'}
+    ],
+    videos:[
+      {title:'How to Sell Like the Most Successful Sales Professionals',url:'https://www.youtube.com/watch?v=9bVTlEw1qjQ',must:true,
+        summary:'頂尖 10% 銷售人員擁有三大共同特質：企圖心、克服恐懼的意願、對成功 100% 的絕對承諾。透過「追求拒絕（Go for No）」法則，主動面對被拒絕的恐懼，觸發的「不」越多，得到的「是」就越多。',
+        keyQuote:'「你觸發的『不』越多，你能得到的『是』就越多。」',
+        action:'採用「追求拒絕」法則——主動尋求被拒絕的機會，將反對意見轉化為成交機會。'},
+      {title:'How to Stay Motivated in Sales',url:'https://www.youtube.com/watch?v=_hO6-Vitb1A',must:false,
+        summary:'維持銷售動力的關鍵：精準鎖定目標客戶、以情感連結建立信任、多問開放式問題。特別介紹「100 次通話法」——承諾盡快聯絡 100 位潛在客戶，將重點放在聯繫而非成交，藉此減輕壓力。',
+        keyQuote:'「講述不是銷售，只有提問才是銷售。」',
+        action:'實施「100 次通話法」：兩週內聯絡 100 位新潛在客戶，專注建立聯繫而非成交。'},
+      {title:'7 Tips to Help You Become More Goal-Oriented',url:'https://www.youtube.com/watch?v=67iEH_r2zSU',must:false,
+        summary:'七步目標設定公式：決定你要什麼、寫下來、設定期限、列出任務清單、整理成計畫、採取行動、每天做一件朝目標邁進的事。「清晰」是成功的核心關鍵字。',
+        keyQuote:'「清晰要求你必須對自己是誰、你相信什麼、你真正擅長什麼，有絕對清楚的認知。」',
+        action:'用現在式寫下未來 12 個月的十個目標，選出影響最大的一個，每天至少做一件推進它的事。'},
+      {title:'How to Build Unshakeable Self-Confidence',url:'https://www.youtube.com/watch?v=uTanI0w7Hig',must:false,
+        summary:'阻礙大多數人實現夢想的主因是缺乏對自己能力的信念。建立持久自信的秘訣在於「忠於自己」——與自己最高的價值觀和抱負保持一致。',
+        keyQuote:'「如果你知道自己絕對不會失敗，你會敢於夢想哪一件偉大的事情？」',
+        action:'問自己：「如果我不會失敗，我敢夢想什麼？」寫下答案，憑信心邁出第一步。'},
+      {title:'Why Failure is Good for You',url:'https://www.youtube.com/watch?v=Q7Pv3k_rjlA',must:false,
+        summary:'失敗不是性格缺陷，而是通往更大成功的墊腳石。愛迪生嘗試超過 1,000 次才發明燈泡。失敗教會我們勇敢、相信直覺，並看到其他可能的解決路徑。',
+        keyQuote:'「我沒有失敗 1,000 次，燈泡是一項有 1,000 個步驟的發明。」——愛迪生',
+        action:'接受可能的最壞情況，把每次失敗當作學習「什麼不該做」的機會。'}
+    ],
+    quiz:[
+      {q:'根據影片，頂尖銷售人員共有的三大特質不包含哪一項？',opts:['企圖心','廣泛的人脈網絡','克服恐懼的意願','對成功100%的絕對承諾'],ans:1},
+      {q:'「100次通話法」的主要目的是什麼？',opts:['兩週內達成100筆銷售','消除必須成交的壓力，讓銷售更流暢','建立100人電話名單','測試哪種產品最受歡迎'],ans:1},
+      {q:'七步目標設定公式中，寫下目標時應使用什麼時態？',opts:['過去式，回顧成就','現在式，好像目標已實現','未來式，因為尚未達成','條件式，保持彈性'],ans:1},
+      {q:'建立持久自信的核心秘訣是什麼？',opts:['累積成功經驗','忠於自己，與最高價值觀保持一致','多參加培訓課程','模仿成功人士的行為'],ans:1},
+      {q:'愛迪生被問到失敗1000次的感覺時，他怎麼回答？',opts:['每次失敗讓我更接近成功','我沒有失敗1000次，燈泡是一項有1000個步驟的發明','失敗是成功之母','我從不認為那些是失敗'],ans:1}
+    ]
+  },
+  {
+    id:2, name:'開發深淵', icon:'⚔️', color:'#3b82f6',
+    subtitle:'銷售基礎與開發',
+    goal:'掌握現代銷售的脈絡，學會發掘客戶真正的需求，並運用價值銷售與精準的陌生開發技巧。',
+    coachSpeech:'第二關了！你以為背好產品規格就能賣東西？<span class="highlight">客戶買的不是產品，是他們人生的改變！</span>給我把「推銷員」三個字從腦袋裡刪掉，從今天起你是「問題解決者」！每次開口前，先問自己：「我能幫他什麼？」',
+    cards:[
+      {id:'c2-1',title:'幫助而非推銷',rarity:'legend',content:'在冷呼叫時，抱持著幫助客戶解決問題的心態，而不是一心只想賣東西。你不是推銷員，你是問題解決者！'},
+      {id:'c2-2',title:'價值銷售心法',rarity:'legend',content:'客戶買的不是產品，而是產品能為他們帶來的結果與價值的提升。銷售必須聚焦於客戶生活或工作能獲得什麼改善。'},
+      {id:'c2-3',title:'事前研究術',rarity:'rare',content:'在接觸客戶前做好功課，了解他們的痛點與需求，不要使用千篇一律的推銷話術。知己知彼，百戰百勝！'}
+    ],
+    videos:[
+      {title:'5 Ways to Sell Anything',url:'https://www.youtube.com/watch?v=1N0K6RbhXkA',must:true,
+        summary:'銷售的關鍵不在產品本身，而在了解客戶需求、建立信任、深入研究銷售對象、善用提問，以及以「幫助者」而非「推銷員」的角色出發。',
+        keyQuote:'「未來屬於那些敢於開口要求的人。」',
+        action:'下次銷售前，先花時間提問並傾聽客戶的痛點，將重心從「產品規格」轉向「解決客戶問題」。'},
+      {title:'5 Cold Calling Tips to Help Close More Sales',url:'https://www.youtube.com/watch?v=JMwS7-vBXLw',must:true,
+        summary:'82% 的買家願意與陌生開發的銷售人員會面。關鍵在於事前研究、以「幫助而非推銷」的心態出發、保持耐心（平均需 18 通電話）、使用腳本但自然對話，以及提前準備反對意見的應對策略。',
+        keyQuote:'「80% 的潛在客戶在說『是』之前會說四次『不』，但 92% 的銷售人員在第四次『不』之後就放棄了。」',
+        action:'列出最常遇到的三種反對意見，事先準備好具體回應話術。'},
+      {title:'What is Value Selling & Why to Use It',url:'https://www.youtube.com/watch?v=Rvz5cf3zRk4',must:true,
+        summary:'客戶購買的不是產品本身，而是產品帶來的結果與好處。價值銷售要求深入了解買家、找出痛點，以「合作夥伴」角色建立長期信任關係。',
+        keyQuote:'「人們買的不是產品，他們買的是產品將帶給他們的結果。」',
+        action:'寫下你產品的「獨特銷售主張（USP）」，列出三個客戶使用後獲得具體回報的實例。'},
+      {title:'Selling in 2019 vs 1999, What Has Changed?',url:'https://www.youtube.com/watch?v=Ppgd3GBTi7U',must:false,
+        summary:'四大關鍵變化：企業必須建立線上形象、銷售已轉移到線上、客戶比以往掌握更充分的資訊，以及企業能透過數據追蹤鎖定特定客戶。不願擁抱數位轉型的企業將被市場淘汰。',
+        keyQuote:'「人們現在以全新方式購物和學習，行銷人員需要適應，否則將面臨滅絕的風險。」',
+        action:'檢查你的線上形象是否完善，開始投資至少一種數位行銷策略。'},
+      {title:'Modern Sales Strategies You Need To Crush Your Goals',url:'https://www.youtube.com/watch?v=hWsmphb90qE',must:false,
+        summary:'四大現代銷售策略：個人化溝通、掌握社群銷售、善用 CRM 與自動化工具（每週可省 10-30 小時）、透過說故事建立情感連結。適應力是在變化銷售環境中生存的關鍵。',
+        keyQuote:'「人們首先憑情感購買，然後再用邏輯來合理化。」',
+        action:'選一個社群平台，每週分享一則有價值的產業洞察或客戶成功案例。'}
+    ],
+    quiz:[
+      {q:'根據影片，專注於哪個面向的業務員會更成功？',opts:['壓低價格','產品如何滿足客戶需求','競爭對手的弱點','自己的銷售業績數字'],ans:1},
+      {q:'平均需要打幾通電話才能與買家取得聯繫？',opts:['5通','10通','18通','25通'],ans:2},
+      {q:'價值銷售中，銷售人員應以什麼身份展示解決方案？',opts:['產品專家','價格談判者','客戶的資源與合作夥伴','市場分析師'],ans:2},
+      {q:'超過一半的「尋找附近（near me）」搜尋會帶來什麼結果？',opts:['線上購買','實體店面的造訪','電話諮詢','社群媒體互動'],ans:1},
+      {q:'CRM、自動化和AI的結合，平均每週可為銷售人員節省多少時間？',opts:['1-5小時','5-10小時','10-30小時','30-50小時'],ans:2}
+    ]
+  },
+  {
+    id:3, name:'說服之塔', icon:'🗣️', color:'#8b5cf6',
+    subtitle:'溝通與說服技巧',
+    goal:'提升社交智商，學會深度傾聽，並利用說故事和同理心來發揮說服力。',
+    coachSpeech:'你有兩隻耳朵一張嘴，知道為什麼嗎？<span class="highlight">因為你應該聽的比說的多兩倍！</span>說服的最高境界不是口若懸河，是讓對方自己說出「我需要這個」！記住，大腦先處理情感，再處理邏輯。先打動心，再說服腦！',
+    cards:[
+      {id:'c3-1',title:'說服雙動機',rarity:'legend',content:'人類的所有行動都受到「對獲益的渴望」與「對損失的恐懼」所驅使，銷售時必須同時滿足這兩點。'},
+      {id:'c3-2',title:'全神傾聽術',rarity:'rare',content:'傾聽是最高級的讚美。提出好問題後，保持安靜並專注於客戶的回答，這能讓客戶感到被重視並建立信任。'},
+      {id:'c3-3',title:'故事連結法',rarity:'rare',content:'大腦總是先處理情感再處理邏輯。講述真實客戶的成功故事，比單純提出數據更有說服力。先打動心，再說服腦！'}
+    ],
+    videos:[
+      {title:'4 Ways You Can Master Persuasion',url:'https://www.youtube.com/watch?v=FoTzaPef3Yo',must:true,
+        summary:'說服力是決定成敗的關鍵能力。人類行為受兩大動機驅動：「對獲得的渴望」與「對失去的恐懼」。最有效的策略是同時運用這兩種動機（雙重動機），先找出對方真正想要什麼。',
+        keyQuote:'「說服是一門讓別人做你想讓他們做的事，並且喜歡去做的藝術。」——艾森豪',
+        action:'在說服任何人之前，先提問找出對方真正想要的，再展示你能如何幫助他們。'},
+      {title:'The Power of Persuasion',url:'https://www.youtube.com/watch?v=LsYXfe42qPE',must:true,
+        summary:'說服力是可學習的技能，能帶來巨大的「個人力量」。透過「槓桿效應」——讓他人與你合作——來倍增成果。所有優秀經理人本質上都是優秀的「低壓銷售人員」，影響而非命令。',
+        keyQuote:'「你認識的人越多，且以正面方式認識你的人越多，你就會越幸運。」',
+        action:'在請求幫助前，先思考「我能提供什麼來交換對方的合作」——先給予，才能收穫。'},
+      {title:'5 Tips On How To Communicate More Effectively',url:'https://www.youtube.com/watch?v=0105iRCeMVQ',must:false,
+        summary:'良好溝通能力佔事業與生活成功的 85%。五個技巧：組織想法、做好準備、簡明扼要、換句話說並重複重點、以及積極傾聽。',
+        keyQuote:'「有效溝通的很大一部分在於積極傾聽（active listening），而非僅僅是聽。」',
+        action:'在下次重要溝通前，先組織想法、過濾多餘資訊，預先準備對方可能的問題。'},
+      {title:'Why Listening is Better Than Talking',url:'https://www.youtube.com/watch?v=N5Zi_G2MTHw',must:false,
+        summary:'有效溝通中最重要的是傾聽而非說話。三個強力開場問題：「你從事什麼工作？」「怎麼進入這行的？」「然後你做了什麼？」提問後留白讓對方回答。',
+        keyQuote:'「全神貫注是最高形式的讚美。」——戴爾·卡內基',
+        action:'下次交談時使用這三個問題，刻意練習身體前傾、保持眼神交流、問完後停頓留白。'},
+      {title:'8 Tips to Increase Sales',url:'https://www.youtube.com/watch?v=mXX6t5kOqV0',must:false,
+        summary:'從心理學角度提升銷售：利用認知失調讓客戶先在小處同意、運用從眾心理、說故事而非給數據、運用稀缺性、給退路建立信任、使用逆向心理，一切建立在真誠基礎上。',
+        keyQuote:'「接觸每位顧客時，都應該抱持幫助他們解決問題的想法，而不是為了推銷。」',
+        action:'準備一個真實客戶成功故事，下次銷售時用故事取代統計數據來打動對方。'}
+    ],
+    quiz:[
+      {q:'「雙重動機」策略是指什麼？',opts:['同時用獎勵和懲罰控制對方','同時展示「獲得的機會」與「避免損失的機會」','讓兩個人同時來說服','先用恐懼再用獎勵分兩次說服'],ans:1},
+      {q:'良好溝通能力佔事業與生活成功的多少百分比？',opts:['50%','70%','85%','95%'],ans:2},
+      {q:'大多數人傾聽能力差的主要原因是什麼？',opts:['對話題不感興趣','環境太吵雜','在別人說話時忙著準備自己的回覆','記憶力不好'],ans:2},
+      {q:'「認知失調」在銷售中的應用方式是什麼？',opts:['製造客戶焦慮感','在互動初期讓客戶在小處先同意，使後續較不易反對','重複產品優點直到同意','展示競爭對手缺點'],ans:1},
+      {q:'影片中「槓桿效應」在說服情境中是指什麼？',opts:['用財務壓力迫使對方','透過他人合作來倍增自己的成果','利用對方弱點','同時進行多項工作'],ans:1}
+    ]
+  },
+  {
+    id:4, name:'成交殿堂', icon:'🎯', color:'#f59e0b',
+    subtitle:'異議處理與促結技巧',
+    goal:'學習引導客戶做出購買決策的前提條件，妥善處理反對意見，並掌握雙贏的談判技巧。',
+    coachSpeech:'多少人懂得介紹，卻在最後臨門一腳退縮了！聽好，<span class="highlight">提出促結問題後，閉上你的嘴！先開口的人就輸了！</span>這叫「沉默黃金法則」！要有耐心，讓沉默為你工作！',
+    cards:[
+      {id:'c4-1',title:'促結先決條件',rarity:'legend',content:'在要求客戶決定前，必須確認客戶真的渴望該產品、信任你的公司、確實需要它，且有能力負擔。缺一不可！'},
+      {id:'c4-2',title:'耐心提問術',rarity:'rare',content:'優秀的談判者不會咄咄逼人，他們充滿耐心，透過提問了解客戶真正在意的是什麼（不僅僅是價格）。'},
+      {id:'c4-3',title:'沉默黃金法則',rarity:'legend',content:'在提出促結問題後，必須保持絕對的安靜。先開口說話的人通常會在這個決策過程中失去優勢。閉嘴，讓沉默為你工作！'}
+    ],
+    videos:[
+      {title:'10 Effective Closing Requirements in Sales',url:'https://www.youtube.com/watch?v=tD-nT6C_grE',must:true,
+        summary:'成交前必須滿足 10 個基礎條件：客戶的購買慾望、信任感、實際需求、使用能力、負擔能力、對報價的了解，加上銷售人員的渴望成交態度、成交技巧、面對拒絕的韌性、提問後保持沉默的紀律。',
+        keyQuote:'「提出成交問題後，先開口的人通常會輸。」',
+        action:'將成交論點寫在紙上，對著鏡子反覆練習，直到能自信自然地運用。'},
+      {title:'The Top 3 Negotiation Skills Of Persuasive People',url:'https://www.youtube.com/watch?v=H9qRMaNtnNo',must:false,
+        summary:'頂尖談判者並非強硬之人，而是溫暖、友善、隨和的人，追求雙贏。三大技巧：善用好問題、以耐心先在共識點上達成協議、做好充分事前準備（佔成功的 90%）。',
+        keyQuote:'「準備工作佔了談判成功的 90%。」',
+        action:'下次談判前，列出需要了解的資訊，預先準備問題清單，模擬各種可能情境。'},
+      {title:'5 Ways to Sell Your Ideas',url:'https://www.youtube.com/watch?v=DYiNywfNC7E',must:false,
+        summary:'推銷想法五步驟：了解受眾的需求與痛點、完善推銷演說、強調好處而非特點、給予具體例子、展示如何幫助受眾達成大目標。',
+        keyQuote:'「特點是產品的某個面向，好處則是為什麼有人應該在意這個面向。」',
+        action:'重新檢視銷售話術，把所有「特點描述」改寫為「好處描述」。'},
+      {title:'The Five Best Sales Books For Professionals',url:'https://www.youtube.com/watch?v=BSPpdma6QJk',must:false,
+        summary:'五本銷售經典推薦：第5名《銷售聖經》、第4名《推銷是人的天性》、第3名《成交的藝術》、第2名《挑戰者銷售》、第1名《SPIN 銷售心法》——用背景、難點、暗示、需求確認四類提問引導銷售。',
+        keyQuote:'「SPIN 銷售法透過四個步驟系統性地發掘客戶需求並展現產品價值。」',
+        action:'開始閱讀《SPIN 銷售心法》，嘗試在銷售對話中依序使用四類問題。'},
+      {title:'How to Sell Like the Most Successful Sales Professionals',url:'https://www.youtube.com/watch?v=9bVTlEw1qjQ',must:false,
+        summary:'頂尖業務員的三大特質：強烈的野心、克服恐懼的渴望（使用「追求拒絕」法則）、對成功的 100% 承諾。底層 80% 的業務員只是半吊子涉獵，心理上總有一腳踏在門外。',
+        keyQuote:'「觸發越多的『不』，就能得到越多的『是』。」',
+        action:'從今天起增加推銷嘗試次數，刻意讓自己習慣聽到「不」。'}
+    ],
+    quiz:[
+      {q:'頂尖銷售人員在什麼情況下會拒絕接受訂單？',opts:['客戶預算不夠高','客戶態度不夠積極','不確信產品是客戶真正需要的','客戶是第一次購買'],ans:2},
+      {q:'頂尖談判者的性格特質是什麼？',opts:['態度強硬、咄咄逼人','溫暖、友善、低調且隨和','沉默寡言、不輕易表態','精於算計、善於隱藏情緒'],ans:1},
+      {q:'以電視為例，「4K解析度」和「看球賽像在現場」分別屬於什麼？',opts:['4K是特點，像在現場是好處','兩者都是好處','4K是好處，像在現場是特點','兩者都是特點'],ans:0},
+      {q:'SPIN銷售法的四個步驟正確順序為何？',opts:['難點→背景→需求確認→暗示','背景→難點→暗示→需求確認','需求確認→暗示→難點→背景','背景→暗示→難點→需求確認'],ans:1},
+      {q:'準備工作佔了談判成功的多少百分比？',opts:['50%','70%','80%','90%'],ans:3}
+    ]
+  },
+  {
+    id:5, name:'信任聖域', icon:'🤝', color:'#22c55e',
+    subtitle:'客戶經營與信任建立',
+    goal:'創造超越期待的客戶體驗，培養終身客戶，並建立強大的轉介紹系統。',
+    coachSpeech:'新手追新客戶，高手養老客戶！<span class="highlight">第二次購買才是真正的開始！</span>向滿意客戶二次銷售比開發新客戶容易 10 倍！記住「間接努力法則」——你想讓客戶對你印象深刻？先讓他覺得自己很了不起！',
+    cards:[
+      {id:'c5-1',title:'第二次銷售法則',rarity:'legend',content:'第二次購買才是客戶對你第一次承諾的真正認可，向滿意的客戶進行二次銷售比開發新客戶容易 10 倍。'},
+      {id:'c5-2',title:'黃金轉介紹鍊',rarity:'rare',content:'服務轉介紹客戶的難度只有冷呼叫的十五分之一。永遠記得大膽、有禮貌地向滿意客戶要求轉介紹。'},
+      {id:'c5-3',title:'間接努力法則',rarity:'rare',content:'想讓客戶對你印象深刻，最好的方法是「你先對他們感到印象深刻」。透過讓客戶覺得自己很重要，來提升雙方的關係。'}
+    ],
+    videos:[
+      {title:'8 Undeniable Tips To Keep Customers For Life',url:'https://www.youtube.com/watch?v=lJUzh7INCZg',must:true,
+        summary:'「第二次銷售」才是最重要的，它證明你兌現了承諾。透過卓越客服、口碑宣傳與推薦黃金鏈，將一次性買家轉化為終生顧客，大幅降低獲客成本。',
+        keyQuote:'「向滿意顧客重複銷售比新銷售容易 10 倍；推薦銷售比陌生電訪容易 15 倍。」',
+        action:'每次銷售後主動詢問：「1到10分，您有多大意願推薦我們？」低於10分就追問如何改進。'},
+      {title:'3 Strategies to Increase Customer Satisfaction',url:'https://www.youtube.com/watch?v=nZQP-0axwHE',must:false,
+        summary:'顧客滿意度三層次：滿足期望（生存基本）、超越期望（建立忠誠）、讓顧客愉悅與驚喜（情感觸動，堅不可摧的忠誠）。層次越高，競爭對手越難搶走客戶。',
+        keyQuote:'「如果你的工作是讓顧客滿意，那你真正的職稱就是『解決問題的人』。」',
+        action:'定期打電話關心顧客，或寄送與顧客興趣相關的小禮物，從「滿足」升級到「驚喜」。'},
+      {title:'The Truth About Building Trust Online',url:'https://www.youtube.com/watch?v=zg2QOjYmxcs',must:false,
+        summary:'線上信任四大支柱：真實性、一致性、透明度與互動。86% 消費者認為真實性是決定支持品牌的關鍵，75% 的人僅憑網站設計就判斷可信度。',
+        keyQuote:'「真實性是你在網路上最強大的工具。」',
+        action:'減少社群直接推銷比例，增加專業知識與有價值內容，養成向滿意客戶索取評論的習慣。'},
+      {title:'My #1 Secret To Improve Relationships',url:'https://www.youtube.com/watch?v=WB9eHEyfgeQ',must:false,
+        summary:'改善人際關係的核心是「間接努力法則」：想讓別人對你印象深刻，就先對他們感到驚豔。人生 85% 的成功取決於社交技巧，超過 95% 的解僱源於糟糕的社交技巧。',
+        keyQuote:'「我喜歡你，因為當我跟你在一起時，我對自己的感覺很好。」',
+        action:'每天刻意讓身邊的人感覺自己很重要——真誠讚賞他們的成就。'},
+      {title:'7 Ways To Add Value To Your Business',url:'https://www.youtube.com/watch?v=xztW-nosYn0',must:false,
+        summary:'七種增加價值的方法：提高速度、更好品質、附加價值、提高便利性、改善客服、迎合生活方式改變、有計畫的折扣。核心：品質由顧客定義，而非生產者。',
+        keyQuote:'「品質首先指的是實用性——將產品投入到顧客需要的使用中。」',
+        action:'找出一個可以簡化使用方式或提高交付速度的環節，以簡單性作為附加價值。'}
+    ],
+    quiz:[
+      {q:'為什麼「第二次銷售」比第一次更重要？',opts:['利潤較高','證明你已兌現第一次的承諾','不需要任何成本','可收取更高價格'],ans:1},
+      {q:'來自滿意顧客的推薦，銷售難度比陌生電訪容易幾倍？',opts:['5倍','10倍','15倍','20倍'],ans:2},
+      {q:'僅僅「滿足顧客期望」為何不足以鎖定忠誠度？',opts:['成本太高','顧客永遠不會滿足','競爭對手若能超越期望就會搶走客戶','會讓顧客感到厭煩'],ans:2},
+      {q:'有多少比例的消費者僅憑網站設計判斷公司可信度？',opts:['50%','65%','75%','86%'],ans:2},
+      {q:'超過95%被解僱的人，主因是什麼？',opts:['缺乏專業技術','工作績效不達標','糟糕的社交技巧','無法適應新科技'],ans:2}
+    ]
+  },
+  {
+    id:6, name:'效率熔爐', icon:'⏰', color:'#06b6d4',
+    subtitle:'生產力與時間管理',
+    goal:'消除拖延，專注於高價值任務，以最高效率管理每一天。',
+    coachSpeech:'時間就是你的武器！你每天做的第一件事，決定了你這一天的成敗！<span class="highlight">每天早上，先吃掉那隻最大、最醜的青蛙！</span>那隻你最想逃避的任務，就是你最該先完成的任務！80/20 法則告訴我們：20% 的努力帶來 80% 的結果！',
+    cards:[
+      {id:'c6-1',title:'吃青蛙法則',rarity:'legend',content:'養成每天早晨第一件事就是去處理最大、最困難、最重要且最容易拖延的任務的習慣。Eat That Frog!'},
+      {id:'c6-2',title:'說「不」的勇氣',rarity:'rare',content:'運用 80/20 法則，找出帶來 80% 成果的 20% 核心任務，並對所有無法幫助你達成目標的低價值干擾說「不」。'},
+      {id:'c6-3',title:'時間價值計算',rarity:'rare',content:'將期望年薪換算成時薪（例如每小時 50 美元），並嚴格拒絕做任何價值低於這個數字的瑣事。你的時間值多少錢？'}
+    ],
+    videos:[
+      {title:'"Eat That Frog" Top Takeaways',url:'https://www.youtube.com/watch?v=iDV1sSoL0_I',must:true,
+        summary:'每天早上第一件事先處理最大、最困難、最重要的任務。養成這個習慣後會對完成任務產生「正向成癮」，大腦釋放腦內啡驅動你持續完成越來越重要的工作。',
+        keyQuote:'「如果每天早上第一件事是吃掉一隻活青蛙，你就能帶著滿意度過這一天。」——馬克·吐溫',
+        action:'找出你的「青蛙」，明天早上起床後在做任何事之前先完成它。'},
+      {title:'Earn More Money. Eliminate the Time Wasters!',url:'https://www.youtube.com/watch?v=_2UCl_ZkvpU',must:false,
+        summary:'時間是最稀缺、不可取代的資源。應該用金錢換取時間，把低價值工作委派出去。定期問自己「我現在做的是時間的最佳運用嗎？」學會對不符合目標的請求說「不」。',
+        keyQuote:'「你無法管理時間，你只能管理自己。時間管理就是生命管理。」',
+        action:'計算你的時薪（年收入 / 2000），對任何低於此數字的工作盡量委派或外包。'},
+      {title:'The Single Best Word for Ultimate Success',url:'https://www.youtube.com/watch?v=g-Xnh0Tyt1w',must:false,
+        summary:'通往成功最重要的一個字就是「不」。用 80/20 法則找出最重要的 20% 任務，運用 ABCDE 分級法，對低層次任務和分心事物說「不」。',
+        keyQuote:'「僅僅忙碌是不夠的，螞蟻也很忙。問題是我們在忙些什麼？」——梭羅',
+        action:'用 ABCDE 方法將待辦清單分級，嚴格從 A 級任務開始執行。'},
+      {title:'10 Productivity Tips to Help You Reach Your Goals',url:'https://www.youtube.com/watch?v=SnQXuXrk6Ao',must:false,
+        summary:'十個效率技巧：只碰一次法則、寫下計畫、設定小目標、提前計畫、避免過度承諾、停止多工處理、從最難的開始、找最有生產力的時段、減少干擾、設定時間限制。',
+        keyQuote:'「根本沒有所謂的多工處理，只有『任務切換』。人類一次只能專注一件事。」',
+        action:'今天下班前寫下明天的待辦清單，標出最困難的一項，明早第一件事處理。'},
+      {title:'7 Bad Habits That Are Destroying Your Productivity',url:'https://www.youtube.com/watch?v=3-embFrOVL4',must:false,
+        summary:'七個破壞效率的壞習慣：沒有規劃每天、缺乏自律、太常賴床、在網路上浪費時間、沒有優先完成重要任務、抱怨的習慣、讓對失敗的恐懼阻礙行動。',
+        keyQuote:'「保證失敗的最快方法就是從不嘗試。」',
+        action:'買計畫本或開啟待辦清單 App，每天睡前寫下隔天要完成的事項。'}
+    ],
+    quiz:[
+      {q:'完成重要任務後，大腦會產生什麼正向效應？',opts:['血壓下降想休息','釋放腦內啡，產生正向成癮','自動進入多工模式','產生恐懼感更謹慎'],ans:1},
+      {q:'如果你渴望年收入十萬美元，你不應該做什麼？',opts:['不應該設定任何目標','不應該做時薪低於50美元的工作','不應該僱用任何人幫忙','不應該使用時間日誌'],ans:1},
+      {q:'ABCDE方法中「D級任務」應該如何處理？',opts:['立即優先完成','完全淘汰不做','委派給別人去做','放到明天再處理'],ans:2},
+      {q:'「只碰一次法則」是什麼意思？',opts:['每天只處理一項任務','第一次接觸任務就從頭到尾完成','每個任務只花一分鐘','一天只檢查一次郵件'],ans:1},
+      {q:'「抱怨」與哪個行為形成惡性循環，對效率具有破壞性？',opts:['多工處理','過度社交','拖延','過度規劃'],ans:2}
+    ]
+  },
+  {
+    id:7, name:'宗師之巔', icon:'👑', color:'#fbbf24',
+    subtitle:'持續成長與進階思維',
+    goal:'將學習內化為終身習慣，尋找導師並擴展高質量的人脈網絡。',
+    coachSpeech:'到了最後一關！但記住，<span class="highlight">真正的修煉永遠不會結束！</span>把你的車變成行動教室，每天聽一小時音頻，幾年後你就是領域專家！還有，你認識的人決定了你的高度。去結交比你強的人，遠離消耗你的人！這就是宗師之道！',
+    cards:[
+      {id:'c7-1',title:'終身學習之道',rarity:'rare',content:'把汽車變成行動教室，每天聆聽音頻或閱讀一小時，這能讓你在幾年內成為領域專家。學習是最高報酬率的投資。'},
+      {id:'c7-2',title:'策略性人脈術',rarity:'rare',content:'你未來的成就很大程度取決於你認識的人。專注於結交比你優秀、有企圖心的人，遠離無法幫助你成長的群體。'},
+      {id:'c7-3',title:'導師引導法則',rarity:'legend',content:'主動向業界頂尖人士請益，詢問他們成功的關鍵屬性，以及他們會給新人的建議，這能為你的職業生涯帶來飛躍性的成長。'}
+    ],
+    videos:[
+      {title:'10 Habits Holding You Back from Success',url:'https://www.youtube.com/watch?v=zhyvAOmtNzM',must:false,
+        summary:'成功不只靠努力工作，更在於戒除拖累你的壞習慣。十大阻礙包括：空洞承諾、責怪他人、等待完美時機、只談論目標卻沒有設定目標、拖延、懷疑自己、與人比較、不照顧身體、輕易放棄、忽略持續學習。',
+        keyQuote:'「成功就在壞習慣的另一面，耐心地等待你改變。」',
+        action:'選擇一個最嚴重的壞習慣，把每個承諾記錄到日曆並確實執行。'},
+      {title:'How to Network',url:'https://www.youtube.com/watch?v=qxv3NGsDEGw',must:false,
+        summary:'「你認識誰」比「你懂什麼」更關鍵。有策略地選擇對象，加入協會、主動幫助他人。從「索取者」轉變為「給予者」，不求回報地幫助他人，收穫自然會來。美國 85% 的好工作透過推薦填補。',
+        keyQuote:'「給予者總是在尋找播種的機會，因為他們知道收穫絕非偶然。」',
+        action:'找出你欽佩的成功人士，準備具體問題，請求對方幾分鐘時間請教建議。'},
+      {title:'Why You Need to Network if You Want to Skyrocket Your Business',url:'https://www.youtube.com/watch?v=J-sokR7ZzXI',must:false,
+        summary:'建立人脈不是交換名片，而是建立能推動業務的專業關係。注重品質而非數量，透過定期溝通、提供價值和表達感謝來維護關係。善用 LinkedIn 等數位平台擴大影響力。',
+        keyQuote:'「人脈經營是雙向的，不僅關乎你能得到什麼，還關乎你能提供什麼。」',
+        action:'找出三位關鍵聯絡人，主動透過 LinkedIn 建立聯繫，分享對方可能感興趣的產業資訊。'},
+      {title:'The 7 Essential Pillars of Personal Development',url:'https://www.youtube.com/watch?v=AWGayyX9I6o',must:false,
+        summary:'個人發展七大支柱：個人技能、個人成長、個人力量、個人改進、個人賦權、個人分析與個人目標。個人發展需要時間、努力與耐心，設定目標並每天努力就能看到進步。',
+        keyQuote:'「如果沒有清晰可見的目標，雄心壯志就會白費。」',
+        action:'從七大支柱中選出最弱的一項，設定具體短期目標並制定每日行動計畫。'},
+      {title:'How Mentorship Can Skyrocket Your Career',url:'https://www.youtube.com/watch?v=EYnp6tyMj8U',must:false,
+        summary:'導師制能真正加速職業發展。好導師幫你避免犯錯，更快成長。尋找導師從「清晰度」開始——明確職涯目標和需要指導的領域。導師不需無所不知，只需比你領先幾步。',
+        keyQuote:'「接受導師指導的員工晉升頻率是未接受指導員工的五倍。」',
+        action:'寫下最需要指導的職涯領域，找出一位在該領域領先你幾步的人，主動邀請對話。'}
+    ],
+    quiz:[
+      {q:'當我們把失敗歸咎於他人時，應該改問自己什麼問題？',opts:['為什麼這個人要這樣對我？','我該如何避免這種情況再次發生？','誰應該為這件事負責？','下次我該找誰幫忙？'],ans:1},
+      {q:'美國有多少比例的好工作是透過第三方推薦填補的？',opts:['50%','65%','75%','85%'],ans:3},
+      {q:'建立人脈時，應該專注於什麼？',opts:['盡可能認識最多的人','只在社群媒體上互動','建立有意義的關係，注重品質而非數量','只參加大型產業活動'],ans:2},
+      {q:'在七大支柱中，「個人賦權」強調什麼？',opts:['嚴格時間管理','創意思考——不斷尋找更快更好更簡單的方法','大量閱讀書籍','找到好導師'],ans:1},
+      {q:'接受導師指導的員工晉升頻率是未接受指導員工的幾倍？',opts:['兩倍','三倍','五倍','十倍'],ans:2}
+    ]
+  }
+];
+
+const LEVELS = [
+  {lv:1,title:'見習業務',exp:0},
+  {lv:2,title:'銷售新兵',exp:100},
+  {lv:3,title:'開發獵人',exp:250},
+  {lv:4,title:'說服使者',exp:450},
+  {lv:5,title:'成交達人',exp:700},
+  {lv:6,title:'客戶守護者',exp:1000},
+  {lv:7,title:'效率戰士',exp:1350},
+  {lv:8,title:'銷售宗師',exp:1750}
+];
+
+const COACH_QUOTES = [
+  '你覺得自己不行？那是因為你還沒真正拼過！給我站起來，再來一次！',
+  '被拒絕了？太好了！你離成功又近了一步！記住，「Go for no!」',
+  '今天的你比昨天更強了嗎？如果答案是「不確定」，那就去學一個新東西！',
+  '頂尖業務和普通業務的差別只有一個字：「練」！',
+  '客戶不是你的對手，是你的夥伴。幫他解決問題，你就贏了！',
+  '你的極限在哪裡？不知道？那就是還沒到！繼續衝！',
+  '放棄的人才是真正的失敗者。只要你還在嘗試，你就在贏！',
+  '每天進步 1%，一年後你會是現在的 37 倍！這就是複利的力量！',
+  '嘿，你知道嗎？成功的人都有一個共同點——他們從不停止學習！',
+  '時間是你最寶貴的武器。浪費它？那是對自己最大的背叛！',
+  '緊張是好事！緊張代表你在乎！把緊張轉化為專注，你就無敵了！',
+  '你今天吃青蛙了嗎？先解決最難的任務，剩下的都是小菜一碟！',
+  '記住，銷售的本質不是推銷，是幫助！當你真心想幫客戶解決問題時，成交只是自然的結果！',
+  '你知道嗎？準備工作佔了談判成功的 90%！下次開會前，多花 30 分鐘研究客戶，結果會完全不同！',
+  '「講述不是銷售，只有提問才是銷售。」少說多問，讓客戶自己說出他需要什麼！',
+  '人們首先憑情感購買，然後再用邏輯合理化。所以——先打動心，再說服腦！',
+  '你的時間值多少錢？算出你的時薪，然後拒絕做任何低於這個價值的事情！',
+  '全神貫注是最高形式的讚美。下次跟客戶對話時，放下手機，看著對方的眼睛！',
+  '向滿意客戶銷售比開發新客戶容易 10 倍。你有沒有回去找你的老客戶聊聊？',
+  '每天聽一小時音頻學習，幾年後你就是領域專家。把通勤時間變成行動教室！'
+];
+
+const COACH_RESPONSES = {
+  rejected: [
+    '被拒絕了？哈哈，那恭喜你！你又完成了一次「修煉」！Brian Tracy 說過，頂尖業務被拒絕的次數比任何人都多。差別在於，他們不會停下來！下一通電話，GO！🔥',
+    '聽好了！每個「不」都是通往「好」的必經之路。100 通電話法則——你今天打了幾通？不夠的話，現在就拿起電話！💪',
+    '電話被掛了？完美！這代表你今天有在行動！80% 的客戶在說「是」之前會說四次「不」，但 92% 的業務在第四次就放棄了。你不是那 92%，對吧？繼續打！📞🔥',
+    '客戶說「太貴了」？這不是拒絕，是機會！代表他有興趣，只是還沒看到價值。回去問他：「如果價格不是問題，這個方案能幫您解決什麼？」把對話拉回價值！💡',
+    '客戶說「我要再考慮一下」？別慌！這是成交前的正常反應。試試說：「完全理解！方便請教一下，您主要在考慮哪個部分呢？」用提問找出真正的顧慮！🎯',
+    '客戶說「我們已經有供應商了」？好消息，這代表他認同這類服務的價值！你可以說：「太好了！那您對目前的服務有沒有什麼覺得可以更好的地方？」找到縫隙就是你的機會！⚔️',
+    '客戶說「不需要」就掛了？記住愛迪生的精神——燈泡是一項有 1000 個步驟的發明！這通電話不是失敗，是你更了解市場的一個步驟。分析一下，下次怎麼開場能讓他多聽 10 秒？💪',
+    '連續被拒絕好幾次了？你知道嗎，Brian Tracy 年輕時也是從最底層開始的！每個頂尖業務員都曾經歷過這個階段。差別在於——他們把拒絕當修煉，而不是放棄的理由！🔥',
+    '被拒絕後感到沮喪？這很正常！但記住「間接努力法則」——不要專注在自己被拒絕的感受上，把注意力放在「我能為下一個客戶提供什麼價值」。心態一轉，能量就回來了！✨',
+    '又被拒絕了？讓我告訴你一個祕密：頂尖 10% 的業務員之所以在頂端，不是因為他們被拒絕得少，而是因為他們被拒絕的次數比任何人都多！你每多被拒絕一次，就離那 10% 更近一步！Go for no！🏆'
+  ],
+  opening: [
+    '開場白的秘訣？不要一開口就推銷！先問一個好問題，讓客戶說話。比如：「我注意到您的公司最近在⋯⋯請問目前在這方面遇到什麼挑戰嗎？」關鍵是——展現真誠的好奇心！',
+    '記住價值銷售心法！別說「我們的產品有XYZ功能」，要說「如果能幫您解決ABC問題，每個月省下N萬元，您有興趣了解嗎？」把焦點放在客戶身上！',
+    '電話開發的黃金開場：「您好，我是○○○，我專門幫助像貴公司這樣的企業解決○○問題。請問您現在方便聊兩分鐘嗎？」簡短、尊重、直接點出價值！📞',
+    '面對面拜訪開場：先觀察對方辦公室的陳設，找到一個真誠的讚美點。「我注意到您牆上的獎牌，恭喜！能請教一下這個成就背後的故事嗎？」人們喜歡談論自己引以為傲的事！🤝',
+    '轉介紹開場：「○○先生您好，我是經由張總推薦來聯繫您的。張總提到您在○○領域非常專業，我們最近幫助他解決了○○問題，他覺得或許對您也會有幫助。」借力使力！💎',
+    '社群私訊開場：不要直接貼產品連結！先互動對方的內容，留有價值的留言，建立熟悉感後再私訊：「我看到您分享的○○觀點很有啟發，我在這個領域也有些心得，想跟您交流一下。」🌐',
+    '回訪老客戶開場：「王經理好久不見！上次我們合作的○○專案，後來成效如何？有沒有什麼我們可以進一步協助的？」先關心，不急著賣。記住，第二次銷售比開發新客戶容易 10 倍！🔄',
+    '開場被拒絕怎麼辦？準備好「B計畫」：「我完全理解您很忙，那容我用 30 秒說明一下，如果您覺得沒興趣，我絕對不會打擾。」低壓力的態度反而能建立信任！🛡️',
+    '高階主管開場：不要從產品開始，從產業趨勢開始。「李總，我最近在研究○○產業的趨勢變化，發現一個有趣的數據想跟您分享，不知道您有沒有類似的觀察？」展現你的產業知識！📊',
+    '展覽會場開場：「您好！我注意到您在○○攤位前停留了一下，看起來對這類解決方案有興趣？我們剛好在這方面有一些不同的做法，要不要花兩分鐘了解一下？」自然、不強迫！🎪'
+  ],
+  motivate: COACH_QUOTES,
+  next: null // 動態生成
+};
+
+// ================================================================
+// GAME STATE
+// ================================================================
+let state = {
+  name: '',
+  level: 1,
+  exp: 0,
+  completedStages: [],
+  collectedCards: [],
+  watchedVideos: [],
+  quizScores: {},
+  streak: 1,
+  lastVisit: null
+};
+
+function saveState() {
+  state.lastVisit = new Date().toISOString().slice(0,10);
+  localStorage.setItem('sales_dojo_state', JSON.stringify(state));
+}
+
+function loadState() {
+  const saved = localStorage.getItem('sales_dojo_state');
+  if (saved) {
+    state = { ...state, ...JSON.parse(saved) };
+    // Check streak
+    const today = new Date().toISOString().slice(0,10);
+    if (state.lastVisit) {
+      const last = new Date(state.lastVisit);
+      const now = new Date(today);
+      const diff = Math.floor((now - last) / 86400000);
+      if (diff === 1) state.streak++;
+      else if (diff > 1) state.streak = 1;
+    }
+    return true;
+  }
+  return false;
+}
+
+// ================================================================
+// GAME LOGIC
+// ================================================================
+function startGame() {
+  const nameInput = document.getElementById('player-name-input');
+  state.name = nameInput.value.trim() || '勇者';
+  saveState();
+  document.getElementById('welcome-screen').classList.add('hidden');
+  setTimeout(() => {
+    document.getElementById('welcome-screen').style.display = 'none';
+    initUI();
+  }, 800);
+}
+
+function initUI() {
+  document.getElementById('status-bar').style.display = 'flex';
+  document.getElementById('nav-tabs').style.display = 'flex';
+  document.getElementById('coach-bubble').style.display = 'block';
+  updateStatusBar();
+  renderMap();
+  renderCollection();
+  // Coach welcome
+  setTimeout(() => addCoachMessage('歡迎回來，' + state.name + '！今天也要全力以赴喔！準備好了嗎？🔥'), 1500);
+}
+
+function updateStatusBar() {
+  const lv = getLevelInfo();
+  document.getElementById('avatar-letter').textContent = state.name[0];
+  document.getElementById('display-name').textContent = state.name;
+  document.getElementById('display-title').textContent = lv.title;
+  document.getElementById('display-level').textContent = 'Lv.' + lv.lv;
+  const nextLv = LEVELS[Math.min(lv.lv, LEVELS.length - 1)];
+  const prevExp = LEVELS[lv.lv - 1].exp;
+  const needed = nextLv.exp - prevExp;
+  const current = state.exp - prevExp;
+  const pct = lv.lv >= LEVELS.length ? 100 : Math.min(100, Math.floor(current / needed * 100));
+  document.getElementById('exp-text').textContent = `${state.exp} / ${nextLv.exp}`;
+  document.getElementById('exp-fill').style.width = pct + '%';
+  const totalCards = STAGES.reduce((a, s) => a + s.cards.length, 0);
+  document.getElementById('cards-count').textContent = `${state.collectedCards.length}/${totalCards}`;
+  document.getElementById('streak-count').textContent = state.streak;
+}
+
+function getLevelInfo() {
+  for (let i = LEVELS.length - 1; i >= 0; i--) {
+    if (state.exp >= LEVELS[i].exp) return LEVELS[i];
+  }
+  return LEVELS[0];
+}
+
+function addExp(amount) {
+  const oldLv = getLevelInfo().lv;
+  state.exp += amount;
+  const newLv = getLevelInfo();
+  if (newLv.lv > oldLv) showLevelUp(newLv);
+  updateStatusBar();
+  saveState();
+}
+
+function showLevelUp(lv) {
+  const overlay = document.getElementById('levelup-overlay');
+  document.getElementById('lv-new-title').textContent = lv.title;
+  document.getElementById('lv-new-level').textContent = 'Lv.' + lv.lv;
+  overlay.classList.add('show');
+  // Sparks
+  const container = document.getElementById('sparks-container');
+  container.innerHTML = '';
+  for (let i = 0; i < 40; i++) {
+    const s = document.createElement('div');
+    s.className = 'spark';
+    s.style.left = '50%';
+    s.style.top = '50%';
+    s.style.setProperty('--tx', (Math.random() - 0.5) * 600 + 'px');
+    s.style.setProperty('--ty', (Math.random() - 0.5) * 600 + 'px');
+    s.style.animationDelay = Math.random() * 0.5 + 's';
+    s.style.background = ['#fbbf24','#f97316','#ef4444','#22c55e','#3b82f6'][Math.floor(Math.random()*5)];
+    container.appendChild(s);
+  }
+  // Sound effect (simple beep)
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.setValueAtTime(523, ctx.currentTime);
+    osc.frequency.setValueAtTime(659, ctx.currentTime + 0.1);
+    osc.frequency.setValueAtTime(784, ctx.currentTime + 0.2);
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+    osc.start(); osc.stop(ctx.currentTime + 0.5);
+  } catch(e) {}
+  // Auto-close after 3 seconds
+  setTimeout(closeLevelUp, 3000);
+}
+
+function closeLevelUp() {
+  document.getElementById('levelup-overlay').classList.remove('show');
+}
+
+// ================================================================
+// MAP RENDERING
+// ================================================================
+function renderMap() {
+  const mapEl = document.getElementById('map-view');
+  let html = '<div class="map-path">';
+
+  // Stage 8 node at the very top
+  const allCleared = state.completedStages.length >= 7;
+  const s8Class = allCleared ? 'completed' : 'locked';
+  const s8Icon = allCleared ? '👑' : '🔒';
+  html += `<div class="map-node">
+    <div class="node-inner ${s8Class}" style="${allCleared ? 'border-color:var(--gold);box-shadow:0 0 30px rgba(251,191,36,.35);background:linear-gradient(135deg,rgba(251,191,36,.1),var(--card-bg))' : ''}" onclick="${allCleared ? "showView('stage8')" : 'void(0)'}">
+      <div class="node-icon" style="background:#fbbf2422;color:#fbbf24;${allCleared ? 'animation:boss-float 3s ease-in-out infinite' : ''}">🏆</div>
+      <div class="node-info">
+        <h3>第8關：宗師殿堂</h3>
+        <div class="node-sub">致敬祖師爺・修煉回顧</div>
+      </div>
+      <div class="node-status">${s8Icon}</div>
+    </div>
+  </div>`;
+  html += `<div class="map-connector ${allCleared ? 'completed' : ''}"></div>`;
+
+  // Reverse order (stage 7 at top, stage 1 at bottom)
+  const reversed = [...STAGES].reverse();
+  reversed.forEach((stage, idx) => {
+    const realIdx = STAGES.length - 1 - idx;
+    const isCompleted = state.completedStages.includes(stage.id);
+    const isUnlocked = stage.id === 1 || state.completedStages.includes(stage.id - 1);
+    const isActive = isUnlocked && !isCompleted;
+    const statusClass = isCompleted ? 'completed' : isActive ? 'active' : 'locked';
+    const statusIcon = isCompleted ? '✅' : isActive ? '⚡' : '🔒';
+
+    html += `<div class="map-node">
+      <div class="node-inner ${statusClass}" onclick="${isUnlocked ? `openStage(${stage.id})` : 'void(0)'}">
+        <div class="node-icon" style="background:${stage.color}22;color:${stage.color}">${stage.icon}</div>
+        <div class="node-info">
+          <h3>第${stage.id}關：${stage.name}</h3>
+          <div class="node-sub">${stage.subtitle}</div>
+        </div>
+        <div class="node-status">${statusIcon}</div>
+      </div>
+    </div>`;
+    if (idx < reversed.length - 1) {
+      const connCompleted = isCompleted ? 'completed' : '';
+      html += `<div class="map-connector ${connCompleted}"></div>`;
+    }
+  });
+  html += '</div>';
+  mapEl.innerHTML = html;
+}
+
+// ================================================================
+// STAGE DETAIL
+// ================================================================
+function openStage(stageId) {
+  const stage = STAGES.find(s => s.id === stageId);
+  if (!stage) return;
+  showView('stage');
+  const el = document.getElementById('stage-view');
+
+  // Cards HTML
+  let cardsHtml = '';
+  stage.cards.forEach(card => {
+    const isCollected = state.collectedCards.includes(card.id);
+    const rarityClass = 'rarity-' + (card.rarity === 'legend' ? 'legend' : card.rarity === 'rare' ? 'rare' : 'normal');
+    const rarityLabel = card.rarity === 'legend' ? '傳說' : card.rarity === 'rare' ? '稀有' : '普通';
+    cardsHtml += `<div class="skill-card ${rarityClass} ${isCollected ? 'flipped' : ''}" onclick="flipCard('${card.id}', ${stageId})">
+      <div class="skill-card-inner">
+        <div class="skill-card-front">
+          <div class="card-mystery">🃏</div>
+          <div class="card-rarity">${rarityLabel}</div>
+          <div style="font-size:.75rem;color:var(--text3);margin-top:8px">點擊翻牌</div>
+        </div>
+        <div class="skill-card-back">
+          <div class="card-title">${card.title}</div>
+          <div class="card-content">${card.content}</div>
+          <div class="card-collected">${isCollected ? '✅ 已收集' : ''}</div>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  // Videos HTML
+  let videosHtml = '';
+  stage.videos.forEach((vid, i) => {
+    const vidKey = `s${stageId}-v${i}`;
+    const guideId = `guide-${stageId}-${i}`;
+    const isWatched = state.watchedVideos.includes(vidKey);
+    const mustClass = vid.must ? 'must-watch' : '';
+    const watchedClass = isWatched ? 'watched' : '';
+    videosHtml += `<div>
+      <div class="video-item ${mustClass} ${watchedClass}" onclick="toggleVideo('${vidKey}', ${stageId})" style="border-radius:${vid.summary ? '14px 14px 0 0' : '14px'}">
+        <div class="video-thumb">${vid.must ? '⭐' : '▶️'}</div>
+        <div class="video-info">
+          <div class="video-title">${vid.title}</div>
+          ${vid.must ? '<span class="video-badge badge-must">必看</span>' : ''}
+          ${isWatched ? '<span class="video-badge badge-watched">已觀看</span>' : ''}
+          ${vid.summary ? `<button class="video-guide-btn" onclick="event.stopPropagation();toggleGuide('${guideId}')">📖 查看學習重點 ▼</button>` : ''}
+        </div>
+        <div class="video-check">${isWatched ? '✓' : ''}</div>
+      </div>
+      ${vid.summary ? `<div class="video-guide" id="${guideId}">
+        <div class="guide-row"><span class="guide-icon">📝</span><span class="guide-label">重點摘要</span><span class="guide-text">${vid.summary}</span></div>
+        <div class="guide-row"><span class="guide-icon">💡</span><span class="guide-label">關鍵金句</span><span class="guide-text guide-quote">${vid.keyQuote}</span></div>
+        <div class="guide-row"><span class="guide-icon">🎯</span><span class="guide-label">行動建議</span><span class="guide-text">${vid.action}</span></div>
+      </div>` : ''}
+    </div>`;
+  });
+
+  // Quiz HTML
+  const quizDone = state.quizScores[stageId] !== undefined;
+  let quizHtml = '';
+  if (!quizDone) {
+    stage.quiz.forEach((q, qi) => {
+      quizHtml += `<div class="quiz-question" id="quiz-${stageId}-${qi}">
+        <div class="q-text">${qi+1}. ${q.q}</div>
+        <div class="quiz-options">
+          ${q.opts.map((opt, oi) => `<button class="quiz-opt" onclick="answerQuiz(${stageId},${qi},${oi})">${opt}</button>`).join('')}
+        </div>
+      </div>`;
+    });
+  }
+
+  el.innerHTML = `
+    <button class="stage-back" onclick="showView('map')">← 返回地圖</button>
+    <div class="stage-header">
+      <div class="stage-icon" style="color:${stage.color}">${stage.icon}</div>
+      <h2>第${stage.id}關：${stage.name}</h2>
+      <div class="stage-goal">${stage.goal}</div>
+    </div>
+    <div class="coach-speech">
+      <div class="coach-avatar-row">
+        <span class="avatar">🔥</span>
+        <span class="name">教練</span>
+      </div>
+      <div class="speech-text">${stage.coachSpeech}</div>
+    </div>
+    <div class="section-title">🃏 技能卡牌</div>
+    <div class="cards-grid">${cardsHtml}</div>
+    <div class="section-title">🎬 推薦影片</div>
+    <div class="video-list">${videosHtml}</div>
+    <div class="boss-section">
+      <div class="boss-header">
+        <div class="boss-icon">👹</div>
+        <h3>BOSS 戰 — 知識檢驗</h3>
+        <p>${quizDone ? '✅ 已通關！' : '答對所有題目才能擊敗 Boss！'}</p>
+      </div>
+      ${quizDone ? `<div class="boss-result" style="display:block"><h3 style="color:var(--green)">🎉 Boss 已擊敗！</h3><p>得分：${state.quizScores[stageId]}/${stage.quiz.length}</p></div>` : quizHtml}
+      <div class="boss-result" id="boss-result-${stageId}">
+        <h3 id="boss-msg-${stageId}"></h3>
+        <button class="result-btn" id="boss-btn-${stageId}" style="background:var(--green);color:#000" onclick="completeStage(${stageId})">解鎖下一關！</button>
+      </div>
+    </div>
+  `;
+}
+
+function flipCard(cardId, stageId) {
+  if (!state.collectedCards.includes(cardId)) {
+    state.collectedCards.push(cardId);
+    addExp(15);
+    saveState();
+  }
+  // Re-render
+  openStage(stageId);
+  renderCollection();
+}
+
+function toggleGuide(guideId) {
+  const el = document.getElementById(guideId);
+  if (el) el.classList.toggle('open');
+}
+
+function toggleVideo(vidKey, stageId) {
+  const stage = STAGES.find(s => s.id === stageId);
+  const vIdx = parseInt(vidKey.split('-v')[1]);
+  // Always open YouTube link
+  if (stage && stage.videos[vIdx]) {
+    window.open(stage.videos[vIdx].url, '_blank');
+  }
+  // Only give EXP on first watch
+  if (!state.watchedVideos.includes(vidKey)) {
+    state.watchedVideos.push(vidKey);
+    addExp(10);
+    saveState();
+  }
+  openStage(stageId);
+}
+
+// Quiz state per stage
+const quizAnswered = {};
+
+function answerQuiz(stageId, qIdx, optIdx) {
+  const stage = STAGES.find(s => s.id === stageId);
+  const q = stage.quiz[qIdx];
+  const key = `${stageId}-${qIdx}`;
+  if (quizAnswered[key]) return;
+  quizAnswered[key] = true;
+
+  const qEl = document.getElementById(`quiz-${stageId}-${qIdx}`);
+  const btns = qEl.querySelectorAll('.quiz-opt');
+  btns.forEach((btn, i) => {
+    btn.classList.add('disabled');
+    if (i === q.ans) btn.classList.add('correct');
+    else if (i === optIdx && optIdx !== q.ans) btn.classList.add('wrong');
+  });
+
+  if (optIdx === q.ans) addExp(20);
+
+  // Check if all answered
+  const allAnswered = stage.quiz.every((_, i) => quizAnswered[`${stageId}-${i}`]);
+  if (allAnswered) {
+    const correct = stage.quiz.filter((qq, i) => {
+      const el = document.getElementById(`quiz-${stageId}-${i}`);
+      return el.querySelector('.quiz-opt.correct.disabled') && !el.querySelector('.quiz-opt.wrong');
+    }).length;
+    // Actually count correct answers
+    let score = 0;
+    stage.quiz.forEach((qq, i) => {
+      const el = document.getElementById(`quiz-${stageId}-${i}`);
+      const wrongEl = el.querySelector('.quiz-opt.wrong');
+      if (!wrongEl) score++;
+    });
+
+    state.quizScores[stageId] = score;
+    saveState();
+
+    const resultEl = document.getElementById(`boss-result-${stageId}`);
+    const msgEl = document.getElementById(`boss-msg-${stageId}`);
+    const btnEl = document.getElementById(`boss-btn-${stageId}`);
+
+    if (score === stage.quiz.length) {
+      msgEl.textContent = `🎉 完美通關！${score}/${stage.quiz.length} 全對！`;
+      msgEl.style.color = 'var(--green)';
+      btnEl.style.display = 'inline-block';
+      addExp(50);
+    } else {
+      msgEl.textContent = `得分：${score}/${stage.quiz.length}。不完美，但你已經在進步了！`;
+      msgEl.style.color = 'var(--gold)';
+      btnEl.textContent = '繼續前進！';
+      btnEl.style.display = 'inline-block';
+    }
+    resultEl.style.display = 'block';
+  }
+}
+
+function completeStage(stageId) {
+  if (!state.completedStages.includes(stageId)) {
+    state.completedStages.push(stageId);
+    addExp(100);
+    saveState();
+    addCoachMessage(`太棒了！你通過了第${stageId}關「${STAGES[stageId-1].name}」！${stageId < 7 ? '下一關等著你！繼續衝！🔥' : '你已經完成所有修煉，成為銷售宗師了！👑'}`);
+  }
+  showView('map');
+  renderMap();
+}
+
+// ================================================================
+// COLLECTION VIEW
+// ================================================================
+function renderCollection() {
+  const el = document.getElementById('collection-view');
+  let html = '<h2 style="text-align:center;color:var(--gold);margin-bottom:20px">🃏 技能卡牌圖鑑</h2>';
+
+  STAGES.forEach(stage => {
+    const collected = stage.cards.filter(c => state.collectedCards.includes(c.id)).length;
+    const total = stage.cards.length;
+    const allCollected = collected === total;
+
+    html += `<div class="collection-stage">
+      <div class="collection-stage-header">
+        <span style="font-size:1.2rem">${stage.icon}</span>
+        <h3>${stage.name}</h3>
+        ${allCollected ? '<span style="color:var(--gold)">🏆</span>' : ''}
+        <span class="collection-progress">${collected}/${total}</span>
+      </div>
+      <div class="collection-grid">
+        ${stage.cards.map(card => {
+          const has = state.collectedCards.includes(card.id);
+          return `<div class="mini-card ${has ? 'collected' : 'locked'}" ${has ? `onclick="openCardModal('${card.id}')"` : ''}>
+            <div class="mini-icon">${has ? (card.rarity === 'legend' ? '⭐' : '🃏') : '❓'}</div>
+            <div class="mini-name">${has ? card.title : '???'}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  });
+
+  el.innerHTML = html;
+}
+
+// ================================================================
+// VIEW SWITCHING
+// ================================================================
+function showView(view) {
+  document.getElementById('map-view').style.display = view === 'map' ? 'block' : 'none';
+  document.getElementById('stage-view').style.display = view === 'stage' ? 'block' : 'none';
+  document.getElementById('collection-view').style.display = view === 'collection' ? 'block' : 'none';
+  document.getElementById('stage8-view').style.display = view === 'stage8' ? 'block' : 'none';
+
+  document.querySelectorAll('.nav-tab').forEach((tab, i) => {
+    tab.classList.toggle('active', (i === 0 && (view === 'map' || view === 'stage' || view === 'stage8')) || (i === 1 && view === 'collection'));
+  });
+
+  if (view === 'map') renderMap();
+  if (view === 'stage8') renderStage8();
+}
+
+// ================================================================
+// COACH CHAT
+// ================================================================
+let chatOpen = false;
+
+function toggleChat() {
+  chatOpen = !chatOpen;
+  document.getElementById('coach-chat').classList.toggle('open', chatOpen);
+  if (chatOpen) {
+    if (document.getElementById('chat-messages').children.length === 0) {
+      addCoachMessage('喲！有什麼需要教練幫忙的嗎？儘管開口！');
+    }
+    renderChatOptions();
+  }
+}
+
+function addCoachMessage(text) {
+  const el = document.getElementById('chat-messages');
+  const msg = document.createElement('div');
+  msg.className = 'chat-msg coach';
+  msg.textContent = text;
+  el.appendChild(msg);
+  el.scrollTop = el.scrollHeight;
+}
+
+function addPlayerMessage(text) {
+  const el = document.getElementById('chat-messages');
+  const msg = document.createElement('div');
+  msg.className = 'chat-msg player';
+  msg.textContent = text;
+  el.appendChild(msg);
+  el.scrollTop = el.scrollHeight;
+}
+
+function renderChatOptions() {
+  const el = document.getElementById('chat-options');
+  const hasCards = state.collectedCards.length > 0;
+  const options = [
+    { text: '教練，我被客戶拒絕了...', key: 'rejected' },
+    { text: '教練，教我開場白！', key: 'opening' },
+    { text: '教練，我需要打氣！', key: 'motivate' },
+    { text: '教練，今天該學什麼？', key: 'next' }
+  ];
+  if (hasCards) {
+    options.push({ text: '🎴 今日修煉指引', key: 'daily_card' });
+    options.push({ text: '🧠 隨機心法考驗', key: 'quiz_me' });
+  }
+  el.innerHTML = options.map(opt =>
+    `<button class="chat-opt-btn" onclick="chatRespond('${opt.key}','${opt.text}')">${opt.text}</button>`
+  ).join('');
+}
+
+// Quiz data for coach random quiz (based on card content)
+const CARD_QUIZ_POOL = [
+  {cardId:'c1-1',q:'「Go for No」法則的核心邏輯是什麼？',opts:['盡量避免被拒絕','觸發越多的「不」就能得到越多的「是」','只接觸會說好的客戶','每天被拒絕100次'],ans:1},
+  {cardId:'c1-2',q:'SMART 目標中的 M 代表什麼？',opts:['Meaningful（有意義的）','Measurable（可衡量的）','Manageable（可管理的）','Motivating（有激勵性的）'],ans:1},
+  {cardId:'c1-3',q:'100通電話法則的重點是什麼？',opts:['成交率','消除壓力，專注聯繫而非成交','找到100個客戶','測試話術'],ans:1},
+  {cardId:'c2-1',q:'「幫助而非推銷」的核心角色定位是？',opts:['推銷員','談判專家','問題解決者','產品顧問'],ans:2},
+  {cardId:'c2-2',q:'價值銷售中，客戶真正購買的是什麼？',opts:['產品本身','最低價格','產品帶來的結果與價值','品牌知名度'],ans:2},
+  {cardId:'c2-3',q:'事前研究術強調在接觸客戶前最該做什麼？',opts:['背熟產品手冊','了解客戶的痛點與需求','準備折扣方案','練習推銷話術'],ans:1},
+  {cardId:'c3-1',q:'人類行為的兩大主要動機是什麼？',opts:['好奇心與責任感','對獲益的渴望與對損失的恐懼','理性與感性','愛與恨'],ans:1},
+  {cardId:'c3-2',q:'全神傾聽術中，傾聽為何是最高級的讚美？',opts:['可以找到對方弱點','讓客戶感到被重視並建立信任','消磨時間','顯得專業'],ans:1},
+  {cardId:'c3-3',q:'故事連結法認為大腦先處理什麼？',opts:['邏輯','數據','情感','價格'],ans:2},
+  {cardId:'c4-1',q:'促結前必須確認的條件不包括哪一項？',opts:['客戶渴望產品','客戶信任你','客戶的星座合不合適','客戶有能力負擔'],ans:2},
+  {cardId:'c4-2',q:'耐心提問術中，優秀談判者最重視什麼？',opts:['口才','透過提問了解客戶真正在意的','強勢壓制','用折扣取勝'],ans:1},
+  {cardId:'c4-3',q:'沉默黃金法則：提出促結問題後應該？',opts:['立刻補充更多資訊','保持安靜，先開口的人輸','主動降價','詢問還有沒有問題'],ans:1},
+  {cardId:'c5-1',q:'第二次銷售法則認為第二次購買代表什麼？',opts:['利潤更高','客戶對你第一次承諾的真正認可','不需要成本','可以漲價'],ans:1},
+  {cardId:'c5-2',q:'推薦銷售比陌生電訪容易幾倍？',opts:['5倍','10倍','15倍','20倍'],ans:2},
+  {cardId:'c5-3',q:'間接努力法則：想讓別人對你印象深刻，該怎麼做？',opts:['展示你的成就','先對他們感到印象深刻','送昂貴禮物','在社群上誇獎自己'],ans:1},
+  {cardId:'c6-1',q:'吃青蛙法則中的「青蛙」是指什麼？',opts:['最簡單的任務','最大、最困難、最容易拖延的任務','客戶','團隊專案'],ans:1},
+  {cardId:'c6-2',q:'80/20法則告訴我們什麼？',opts:['80%客戶買20%產品','20%的努力帶來80%的結果','花80%時間在20%客戶上','每天工作8小時休息2小時'],ans:1},
+  {cardId:'c6-3',q:'時間價值計算的目的是什麼？',opts:['跟老闆談加薪','拒絕做低於時薪價值的瑣事','算賺多少錢','跟客戶報價用'],ans:1},
+  {cardId:'c7-1',q:'終身學習之道建議如何利用通勤時間？',opts:['放空休息','聽音頻或閱讀學習','打電話給客戶','規劃行程'],ans:1},
+  {cardId:'c7-2',q:'策略性人脈術最重要的原則是？',opts:['認識越多人越好','專注結交比你優秀的人','只跟同行交流','參加所有活動'],ans:1},
+  {cardId:'c7-3',q:'導師引導法則建議問導師什麼問題？',opts:['能不能借錢','成功的關鍵屬性和給新人的建議','有沒有推薦客戶','薪水多少'],ans:1},
+  // === 第二輪題目（每張卡牌第 2 題）===
+  {cardId:'c1-1',q:'「追求拒絕」法則為什麼能有效消除恐懼？',opts:['因為拒絕次數越多越麻木','因為主動面對恐懼能讓恐懼消失','因為客戶會同情你','因為公司會給獎勵'],ans:1},
+  {cardId:'c1-2',q:'SMART 目標的 T 代表什麼？',opts:['Tough（艱難的）','Teamwork（團隊合作）','Time-bound（有時限的）','Trustworthy（值得信賴的）'],ans:2},
+  {cardId:'c1-3',q:'100通電話法則建議把重點放在什麼上？',opts:['成交數量','聯繫的過程而非結果','通話時長','產品介紹的完整度'],ans:1},
+  {cardId:'c2-1',q:'冷呼叫時，抱持什麼心態最能打動客戶？',opts:['強調自己的業績','真心想幫客戶解決問題','儘快介紹產品規格','用折扣吸引注意'],ans:1},
+  {cardId:'c2-2',q:'價值銷售要求銷售人員以什麼身份與客戶互動？',opts:['產品專家','價格談判者','合作夥伴','市場分析師'],ans:2},
+  {cardId:'c2-3',q:'事前研究最該了解客戶的什麼？',opts:['財務報表','痛點與需求','競爭對手名單','公司歷史'],ans:1},
+  {cardId:'c3-1',q:'「雙重動機」是指同時運用哪兩種力量？',opts:['獎勵與懲罰','獲得的渴望與損失的恐懼','理性與感性','短期與長期'],ans:1},
+  {cardId:'c3-2',q:'傾聽時最重要的肢體語言是？',opts:['雙手抱胸','低頭看手機','身體前傾、保持眼神交流','頻繁點頭'],ans:2},
+  {cardId:'c3-3',q:'為什麼說故事比給數據更有說服力？',opts:['故事比較有趣','大腦先處理情感再處理邏輯','客戶記不住數字','數據容易造假'],ans:1},
+  {cardId:'c4-1',q:'促結四大條件中，哪個最容易被新手忽略？',opts:['客戶是否渴望產品','客戶是否信任你','客戶是否有能力負擔','客戶是否真正需要'],ans:1},
+  {cardId:'c4-2',q:'為什麼頂尖談判者追求「雙贏」而非「我贏」？',opts:['因為法律規定','雙贏能建立長期合作關係','因為要做好人','因為老闆要求'],ans:1},
+  {cardId:'c4-3',q:'沉默黃金法則中，保持沉默的目的是？',opts:['施壓對方','讓客戶自行思考並做出決定','顯示自信','節省體力'],ans:1},
+  {cardId:'c5-1',q:'為什麼第二次銷售比第一次更難能可貴？',opts:['價格更高','代表客戶真正認可你的承諾','公司有獎金','不需要成本'],ans:1},
+  {cardId:'c5-2',q:'推薦黃金鏈最該在什麼時機向客戶要求轉介紹？',opts:['簽約當天','客戶表達滿意時','年底結算時','客戶抱怨時'],ans:1},
+  {cardId:'c5-3',q:'「間接努力法則」的核心邏輯是？',opts:['用間接方式降價','你先讓對方覺得重要，對方就會覺得你重要','透過第三方聯繫','不直接推銷'],ans:1},
+  {cardId:'c6-1',q:'為什麼要在「早上第一件事」吃青蛙？',opts:['早上精力最充沛','提早下班','早上客戶比較多','避免加班'],ans:0},
+  {cardId:'c6-2',q:'如何判斷一項任務是否值得你親自做？',opts:['看老闆有沒有交代','比較任務價值與你的時薪','看心情決定','問同事意見'],ans:1},
+  {cardId:'c6-3',q:'時間價值計算的公式是？',opts:['月薪 ÷ 30','年收入 ÷ 2000','日薪 × 365','月薪 × 12'],ans:1},
+  {cardId:'c7-1',q:'終身學習之道的核心投資報酬觀念是？',opts:['投資股票','學習是最高報酬率的投資','買房增值','存定期存款'],ans:1},
+  {cardId:'c7-2',q:'從「索取者」轉變為「給予者」的人脈經營，為什麼更有效？',opts:['因為給予不需要成本','因為不求回報的幫助能自然累積信任與回報','因為別人會覺得虧欠你','因為這樣比較省時間'],ans:1},
+  {cardId:'c7-3',q:'尋找導師的第一步應該是什麼？',opts:['加入所有專業社團','從「清晰度」開始，明確你需要指導的領域','直接聯繫最有名的人','先成為別人的導師'],ans:1}
+];
+
+const DAILY_CARD_INTROS = [
+  '今天的修煉指引是——',
+  '命運之牌為你揭示——',
+  '今日，祖師爺要你專注於——',
+  '修煉場的神諭告訴你——',
+  '今天的武功心法是——'
+];
+
+function chatRespond(key, playerText) {
+  addPlayerMessage(playerText);
+
+  if (key === 'daily_card') {
+    handleDailyCard();
+    return;
+  }
+  if (key === 'quiz_me') {
+    handleQuizMe();
+    return;
+  }
+
+  let response;
+  if (key === 'next') {
+    const nextStage = STAGES.find(s => !state.completedStages.includes(s.id));
+    if (nextStage) {
+      response = `你目前在第${nextStage.id}關「${nextStage.name}」！重點是：${nextStage.goal} 去闖關吧，我在這裡等你的好消息！💪`;
+    } else {
+      response = getMasterLearningAdvice();
+    }
+  } else {
+    const pool = COACH_RESPONSES[key];
+    response = pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  setTimeout(() => {
+    addCoachMessage(response);
+    renderChatOptions();
+  }, 500);
+}
+
+// ===== 📚 通關後學習建議 =====
+function getMasterLearningAdvice() {
+  const advicePool = [];
+
+  // 類型1：推薦複習某一關的影片
+  STAGES.forEach(s => {
+    const unwatched = s.videos.filter((v, i) => !state.watchedVideos.includes(`s${s.id}-v${i}`));
+    if (unwatched.length > 0) {
+      const vid = unwatched[Math.floor(Math.random() * unwatched.length)];
+      advicePool.push(`🎬 宗師也要溫故知新！第${s.id}關「${s.name}」裡還有 ${unwatched.length} 支影片你沒看過。推薦你看「${vid.title}」，打開影片看看祖師爺怎麼說！`);
+    }
+    // 推薦複習已看過的影片
+    const watched = s.videos.filter((v, i) => state.watchedVideos.includes(`s${s.id}-v${i}`) && v.summary);
+    if (watched.length > 0) {
+      const vid = watched[Math.floor(Math.random() * watched.length)];
+      advicePool.push(`📖 今天重新複習第${s.id}關「${s.name}」的「${vid.title}」吧！記住：${vid.keyQuote} 去點開影片下方的「學習重點」複習一下！`);
+    }
+  });
+
+  // 類型2：推薦複習某張卡牌
+  const collectedCards = [];
+  STAGES.forEach(s => s.cards.forEach(c => {
+    if (state.collectedCards.includes(c.id)) collectedCards.push({card: c, stage: s});
+  }));
+  if (collectedCards.length > 0) {
+    const pick = collectedCards[Math.floor(Math.random() * collectedCards.length)];
+    advicePool.push(`🃏 今天的修煉重點：去卡牌圖鑑翻翻「${pick.card.title}」這張心法卡！核心重點是——${pick.card.content.slice(0, 40)}⋯⋯ 想想今天怎麼把它用在實戰中！💪`);
+  }
+
+  // 類型3：實戰挑戰
+  const challenges = [
+    '💡 今日實戰挑戰：找一位客戶，用「沉默黃金法則」——提出關鍵問題後，忍住不說話，等對方先開口！回來告訴我結果！🔥',
+    '💡 今日實戰挑戰：打 5 通陌生開發電話，不要在意結果，專注在「我有沒有問到好問題」！記住，100 通電話法則的重點是過程！📞',
+    '💡 今日實戰挑戰：找一位滿意的老客戶，真誠地問他：「您有沒有認識的朋友也可能需要我們的服務？」勇敢要求轉介紹！🤝',
+    '💡 今日實戰挑戰：今天跟客戶聊天時，刻意多聽少說。用這三個問題開場：「你做什麼工作？」「怎麼進入這行的？」「然後你做了什麼？」👂',
+    '💡 今日實戰挑戰：找出你今天的「青蛙」——最重要但最想拖延的任務，在做任何其他事之前先完成它！🐸',
+    '💡 今日實戰挑戰：準備一個真實客戶的成功故事，今天銷售時用故事取代數據來打動對方。先打動心，再說服腦！📖',
+    '💡 今日實戰挑戰：用「間接努力法則」——今天對三個人表達真誠的讚賞，讓他們覺得自己很重要。觀察對方的反應！✨',
+    '💡 今日實戰挑戰：重新檢視你的銷售話術，把一個「特點描述」改寫成「好處描述」。不是說「我們有XYZ功能」，而是「這能幫您解決ABC問題」！🎯',
+    '💡 今日實戰挑戰：計算你的時薪，然後審視今天的待辦清單——有沒有低於你時薪價值的任務可以委派出去？⏰',
+    '💡 今日實戰挑戰：下載一本銷售相關的有聲書或 Podcast，把今天的通勤時間變成「行動教室」！🎧'
+  ];
+  advicePool.push(...challenges);
+
+  return advicePool[Math.floor(Math.random() * advicePool.length)];
+}
+
+// ===== 🎴 今日修煉指引 =====
+function handleDailyCard() {
+  const today = new Date().toISOString().slice(0,10);
+  const dailyKey = 'sales_dojo_daily_card';
+  const saved = localStorage.getItem(dailyKey);
+
+  if (saved) {
+    const data = JSON.parse(saved);
+    if (data.date === today) {
+      setTimeout(() => {
+        addCoachMessage(`你今天已經抽過了！今日指引是「${data.cardTitle}」💡 先去實踐吧，明天再來抽！🔥`);
+        renderChatOptions();
+      }, 500);
+      return;
+    }
+  }
+
+  // Pick random collected card
+  const collectedCards = [];
+  STAGES.forEach(s => s.cards.forEach(c => {
+    if (state.collectedCards.includes(c.id)) collectedCards.push(c);
+  }));
+
+  if (collectedCards.length === 0) {
+    setTimeout(() => {
+      addCoachMessage('你還沒有收集任何卡牌！去闖關翻牌吧！🃏');
+      renderChatOptions();
+    }, 500);
+    return;
+  }
+
+  const card = collectedCards[Math.floor(Math.random() * collectedCards.length)];
+  const intro = DAILY_CARD_INTROS[Math.floor(Math.random() * DAILY_CARD_INTROS.length)];
+
+  localStorage.setItem(dailyKey, JSON.stringify({ date: today, cardTitle: card.title }));
+
+  setTimeout(() => {
+    addCoachMessage(`🎴 ${intro}「${card.title}」！\n\n${card.content}\n\n今天跟客戶互動時，試著運用這個心法吧！💪🔥`);
+    renderChatOptions();
+  }, 500);
+}
+
+// ===== 🧠 隨機心法考驗 =====
+function handleQuizMe() {
+  // Filter to only collected cards
+  const available = CARD_QUIZ_POOL.filter(q => state.collectedCards.includes(q.cardId));
+
+  if (available.length === 0) {
+    setTimeout(() => {
+      addCoachMessage('你還沒有收集任何卡牌，沒辦法出題！快去闖關吧！🃏');
+      renderChatOptions();
+    }, 500);
+    return;
+  }
+
+  const quiz = available[Math.floor(Math.random() * available.length)];
+
+  setTimeout(() => {
+    addCoachMessage(`🧠 快問快答！來測試你的心法修煉！`);
+    // Show quiz options
+    const el = document.getElementById('chat-options');
+    el.innerHTML = `<div style="font-size:.82rem;color:var(--gold);font-weight:700;padding:4px 8px;margin-bottom:4px">${quiz.q}</div>` +
+      quiz.opts.map((opt, i) =>
+        `<button class="chat-opt-btn" onclick="answerCoachQuiz(${i},${quiz.ans},'${opt.replace(/'/g,"\\'")}','${quiz.q.replace(/'/g,"\\'")}')">${String.fromCharCode(65+i)}. ${opt}</button>`
+      ).join('');
+  }, 500);
+}
+
+function answerCoachQuiz(selected, correct, selectedText, question) {
+  addPlayerMessage(selectedText);
+
+  setTimeout(() => {
+    if (selected === correct) {
+      addCoachMessage('🔥 答對了！不愧是修煉有成的勇者！+5 EXP 💪');
+      addExp(5);
+    } else {
+      const correctLetter = String.fromCharCode(65 + correct);
+      addCoachMessage(`😤 答錯了！正確答案是 ${correctLetter}！回去翻翻那張卡複習一下吧！`);
+    }
+    renderChatOptions();
+  }, 500);
+}
+
+// ===== 卡牌 Modal =====
+function openCardModal(cardId) {
+  let card = null;
+  STAGES.forEach(s => s.cards.forEach(c => { if (c.id === cardId) card = c; }));
+  if (!card) return;
+
+  const overlay = document.getElementById('card-modal-overlay');
+  const modal = document.getElementById('card-modal');
+  const rarityText = card.rarity === 'legend' ? '⭐ 傳說' : card.rarity === 'rare' ? '💎 稀有' : '普通';
+  const rarityClass = card.rarity === 'legend' ? 'cm-legend' : card.rarity === 'rare' ? 'cm-rare' : '';
+
+  document.getElementById('cm-rarity').textContent = rarityText;
+  document.getElementById('cm-title').textContent = card.title;
+  document.getElementById('cm-content').textContent = card.content;
+
+  modal.className = `card-modal ${rarityClass}`;
+  modal.classList.remove('flipping');
+  overlay.classList.add('show');
+
+  // Auto flip after a short delay
+  setTimeout(() => modal.classList.add('flipping'), 300);
+}
+
+function closeCardModal() {
+  document.getElementById('card-modal-overlay').classList.remove('show');
+  document.getElementById('card-modal').classList.remove('flipping');
+}
+
+// ================================================================
+// STAGE 8 - 宗師殿堂
+// ================================================================
+const STAGE_RECAPS = [
+  {icon:'🔥', name:'心火試煉', lesson:'你學會了擁抱拒絕，把每個「不」變成變強的燃料'},
+  {icon:'⚔️', name:'開發深淵', lesson:'你領悟了價值銷售，成為客戶的問題解決者'},
+  {icon:'🗣️', name:'說服之塔', lesson:'你掌握了傾聽與說故事的力量，先打動心再說服腦'},
+  {icon:'🎯', name:'成交殿堂', lesson:'你學會了沉默黃金法則，讓沉默為你工作'},
+  {icon:'🤝', name:'信任聖域', lesson:'你懂得了經營老客戶的智慧，第二次購買才是真正的開始'},
+  {icon:'⏰', name:'效率熔爐', lesson:'你養成了吃青蛙的習慣，先做最重要最難的事'},
+  {icon:'👑', name:'宗師之巔', lesson:'你踏上了終身學習之道，永不停止成長'}
+];
+
+function renderStage8() {
+  const el = document.getElementById('stage8-view');
+  const totalCards = STAGES.reduce((a, s) => a + s.cards.length, 0);
+  const totalVideos = STAGES.reduce((a, s) => a + s.videos.length, 0);
+  const watchedCount = state.watchedVideos.length;
+  const cardsCount = state.collectedCards.length;
+  const bossCount = Object.keys(state.quizScores).length;
+  const perfectBoss = Object.entries(state.quizScores).filter(([sid, score]) => {
+    const stage = STAGES.find(s => s.id === parseInt(sid));
+    return stage && score === stage.quiz.length;
+  }).length;
+
+  el.innerHTML = `
+    <button class="stage-back" onclick="showView('map')">← 返回地圖</button>
+
+    <!-- 入場 -->
+    <div class="grand-entrance">
+      <div class="crown">🏆</div>
+      <h1>宗師殿堂</h1>
+      <p class="grand-sub">恭喜你，${state.name}！你已完成銷售修煉場的全部修煉！</p>
+    </div>
+
+    <!-- 祖師爺致敬 -->
+    <div class="tribute-card">
+      <div class="tribute-header">
+        <div class="tribute-avatar">👤</div>
+        <div class="tribute-name-block">
+          <h2>Brian Tracy</h2>
+          <div class="tribute-title-tag">銷售修煉場・祖師爺</div>
+        </div>
+      </div>
+
+      <div class="tribute-bio">
+        祖師爺出生於<span class="highlight">加拿大</span>，後來在<span class="highlight">美國</span>發展事業。他年輕時並非一開始就很成功，而是做過很多實務工作——<span class="highlight">銷售、管理、商業經營</span>，一步一步從最基層打磨實力。<br><br>
+        正因為走過這條實戰之路，他悟出了一個真理：<span class="highlight">進步不靠天分，靠的是目標、紀律、時間管理，與永不停止的學習。</span><br><br>
+        後來他開始大量演講、開課、寫書，著作超過 <span class="highlight">80 本</span>，翻譯成數十種語言，足跡遍及全球 <span class="highlight">80 多個國家</span>，影響了數百萬人的職業與人生。
+      </div>
+
+      <div class="tribute-skills">
+        <div class="tribute-skill"><span class="sk-icon">⚔️</span>銷售心法</div>
+        <div class="tribute-skill"><span class="sk-icon">⏰</span>效率工作術</div>
+        <div class="tribute-skill"><span class="sk-icon">🎯</span>目標設定學</div>
+        <div class="tribute-skill"><span class="sk-icon">🔥</span>成功習慣鍛造</div>
+      </div>
+
+      <div class="tribute-legendary">
+        <div class="leg-label">📜 傳世祕笈</div>
+        <div class="leg-text">
+          《<span class="highlight">Eat That Frog!</span>》—— 每天早上，先吃掉那隻最大、最醜的青蛙。把<span class="highlight">最重要、最難、最容易拖延的事先做掉</span>，剩下的都是小菜一碟！
+        </div>
+      </div>
+
+      <div class="tribute-quote">
+        「他是一位把商業實戰經驗，變成人人都聽得懂的成功方法的老師。」
+      </div>
+    </div>
+
+    <!-- 修煉回顧報告 -->
+    <div class="review-report">
+      <h2>📊 修煉回顧報告</h2>
+      <div class="report-stats">
+        <div class="report-stat">
+          <div class="rs-icon">🎬</div>
+          <div class="rs-value">${watchedCount} / ${totalVideos}</div>
+          <div class="rs-label">影片觀看</div>
+        </div>
+        <div class="report-stat">
+          <div class="rs-icon">🃏</div>
+          <div class="rs-value">${cardsCount} / ${totalCards}</div>
+          <div class="rs-label">卡牌收集</div>
+        </div>
+        <div class="report-stat">
+          <div class="rs-icon">👹</div>
+          <div class="rs-value">${bossCount} / 7</div>
+          <div class="rs-label">Boss 擊敗</div>
+        </div>
+        <div class="report-stat">
+          <div class="rs-icon">⭐</div>
+          <div class="rs-value">${perfectBoss}</div>
+          <div class="rs-label">完美通關</div>
+        </div>
+        <div class="report-stat">
+          <div class="rs-icon">🔥</div>
+          <div class="rs-value">${state.streak}</div>
+          <div class="rs-label">連續修煉天數</div>
+        </div>
+        <div class="report-stat">
+          <div class="rs-icon">✨</div>
+          <div class="rs-value">${state.exp}</div>
+          <div class="rs-label">總經驗值</div>
+        </div>
+      </div>
+
+      <h3 style="color:var(--gold);font-size:1.1rem;margin-bottom:12px">📖 七關修煉歷程</h3>
+      <div class="stage-recap">
+        ${STAGE_RECAPS.map((r, i) => `
+          <div class="recap-row">
+            <span class="recap-icon">${r.icon}</span>
+            <span class="recap-stage">第${i+1}關 ${r.name}</span>
+            <span class="recap-lesson">${r.lesson}</span>
+            <span class="recap-check">✅</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- 畢業宣言 -->
+    <div class="graduation">
+      <div class="grad-speech">
+        <span class="highlight">${state.name}</span>，你已經走完了這條修煉之路！<br><br>
+        記住祖師爺的教誨——進步不靠天分，靠的是<span class="highlight">目標、紀律、時間管理，與永不停止的學習</span>。<br><br>
+        從今天起，你不再是見習業務，你是<span class="highlight">銷售宗師</span>！<br><br>
+        但真正的修煉永遠不會結束。把你學到的每一張卡牌、每一個心法，帶到真實的戰場上去。<br><br>
+        去吧，宗師！世界正在等你！🔥👑
+      </div>
+      <div class="grad-buttons">
+        <button class="grad-btn btn-retry" onclick="resetGame()">🔄 重新挑戰</button>
+        <button class="grad-btn btn-share" onclick="shareAchievement()">📤 分享成就</button>
+      </div>
+    </div>
+  `;
+
+  // 觸發煙火動畫
+  launchFireworks();
+}
+
+function launchFireworks() {
+  const overlay = document.getElementById('fireworks-overlay');
+  overlay.classList.add('show');
+  overlay.innerHTML = '';
+
+  const colors = ['#fbbf24','#f97316','#ef4444','#22c55e','#3b82f6','#8b5cf6','#06b6d4'];
+  let round = 0;
+  const maxRounds = 5;
+
+  function burst() {
+    if (round >= maxRounds) {
+      setTimeout(() => overlay.classList.remove('show'), 2000);
+      return;
+    }
+    // Random position
+    const cx = 15 + Math.random() * 70; // 15%~85% of screen width
+    const cy = 10 + Math.random() * 50; // 10%~60% of screen height
+
+    for (let i = 0; i < 30; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'firework';
+      dot.style.left = cx + '%';
+      dot.style.top = cy + '%';
+      const angle = (Math.PI * 2 / 30) * i + Math.random() * 0.3;
+      const dist = 80 + Math.random() * 120;
+      dot.style.setProperty('--fx', Math.cos(angle) * dist + 'px');
+      dot.style.setProperty('--fy', Math.sin(angle) * dist + 'px');
+      dot.style.background = colors[Math.floor(Math.random() * colors.length)];
+      dot.style.animationDelay = Math.random() * 0.3 + 's';
+      dot.style.width = (3 + Math.random() * 4) + 'px';
+      dot.style.height = dot.style.width;
+      overlay.appendChild(dot);
+    }
+    round++;
+    setTimeout(burst, 600);
+  }
+
+  // Play celebration sound
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const notes = [523, 659, 784, 1047];
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.15);
+      gain.gain.setValueAtTime(0.12, ctx.currentTime + i * 0.15);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.15 + 0.4);
+      osc.start(ctx.currentTime + i * 0.15);
+      osc.stop(ctx.currentTime + i * 0.15 + 0.4);
+    });
+  } catch(e) {}
+
+  burst();
+}
+
+function resetGame() {
+  if (confirm('確定要重新挑戰嗎？所有進度將會清除！')) {
+    localStorage.removeItem('sales_dojo_state');
+    location.reload();
+  }
+}
+
+function shareAchievement() {
+  const totalCards = STAGES.reduce((a, s) => a + s.cards.length, 0);
+  const totalVideos = STAGES.reduce((a, s) => a + s.videos.length, 0);
+  const text = `🏆 銷售修煉場 — 通關證書 🏆
+
+👤 宗師：${state.name}
+🎖️ 稱號：銷售宗師 (Lv.${getLevelInfo().lv})
+✨ 經驗值：${state.exp} EXP
+🎬 影片觀看：${state.watchedVideos.length} / ${totalVideos}
+🃏 卡牌收集：${state.collectedCards.length} / ${totalCards}
+👹 Boss 全數擊敗！
+🔥 連續修煉：${state.streak} 天
+
+致敬祖師爺 Brian Tracy 🙏
+#銷售修煉場 #SalesDojo`;
+
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      alert('✅ 成就已複製到剪貼板！你可以貼到社群分享！');
+    }).catch(() => {
+      prompt('複製以下文字分享你的成就：', text);
+    });
+  } else {
+    prompt('複製以下文字分享你的成就：', text);
+  }
+}
+
+// ================================================================
+// INIT
+// ================================================================
+window.addEventListener('DOMContentLoaded', () => {
+  if (loadState()) {
+    document.getElementById('welcome-screen').style.display = 'none';
+    initUI();
+  }
+});
+</script>
+</body>
+</html>
