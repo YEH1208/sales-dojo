@@ -1138,7 +1138,7 @@ function openStage(stageId) {
           ${vid.must ? '<span class="video-badge badge-must">必看</span>' : ''}
           ${isWatched ? '<span class="video-badge badge-watched">已觀看</span>' : ''}
           ${vid.summary ? `<button class="video-guide-btn" onclick="event.stopPropagation();toggleGuide('${guideId}')">📖 查看學習重點 ▼</button>` : ''}
-          ${hasAudio ? `<button class="audio-btn" onclick="event.stopPropagation();toggleAudio('${audioId}')">🔊 祕笈有聲書</button>
+          ${hasAudio ? `<button class="audio-btn" onclick="event.stopPropagation();toggleAudio('${audioId}')">🎙️ 祕笈有聲書</button>
           <div class="audio-player-wrap" id="${audioId}"><audio controls preload="none"><source src="音檔/${audioKey}.m4a" type="audio/mp4"></audio></div>` : ''}
         </div>
         <div class="video-check">${isWatched ? '✓' : ''}</div>
