@@ -465,6 +465,9 @@ a{color:var(--gold);text-decoration:none}
   <p class="subtitle">Sales Dojo - 讓你的銷售力覺醒！</p>
   <input type="text" id="player-name-input" placeholder="輸入你的名字，勇者" maxlength="12">
   <button class="start-btn" onclick="startGame()">開始修煉！</button>
+  <div id="welcome-actions" style="display:none;margin-top:16px;display:flex;flex-direction:column;gap:8px;align-items:center">
+    <button onclick="resetProgress()" style="background:none;border:1px solid var(--fire);color:var(--fire);padding:8px 20px;border-radius:10px;font-size:.85rem;font-family:inherit;cursor:pointer">🗑️ 重置所有進度</button>
+  </div>
 </div>
 
 <!-- ===== STATUS BAR ===== -->
@@ -485,6 +488,7 @@ a{color:var(--gold);text-decoration:none}
     <div class="stat"><span class="icon">🃏</span><span id="cards-count">0/21</span></div>
     <div class="stat"><span class="icon">🔥</span><span id="streak-count">1</span></div>
   </div>
+  <button onclick="showWelcome()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px;opacity:.6" title="設定">⚙️</button>
 </div>
 
 <!-- NAV -->
@@ -954,6 +958,29 @@ function startGame() {
     document.getElementById('welcome-screen').style.display = 'none';
     initUI();
   }, 800);
+}
+
+function showWelcome() {
+  // Hide game UI
+  document.getElementById('status-bar').style.display = 'none';
+  document.getElementById('nav-tabs').style.display = 'none';
+  document.getElementById('coach-bubble').style.display = 'none';
+  document.getElementById('map-view').innerHTML = '';
+  document.getElementById('stage-view').style.display = 'none';
+  document.getElementById('collection-view').style.display = 'none';
+  // Show welcome screen with current name
+  const ws = document.getElementById('welcome-screen');
+  ws.style.display = 'flex';
+  ws.classList.remove('hidden');
+  document.getElementById('player-name-input').value = state.name;
+  document.getElementById('welcome-actions').style.display = 'flex';
+}
+
+function resetProgress() {
+  if (!confirm('⚠️ 確定要重置所有進度嗎？\n\n這會清除你的等級、卡牌、影片記錄和所有闖關進度，無法復原！')) return;
+  if (!confirm('⚠️ 再次確認：真的要重置嗎？')) return;
+  localStorage.removeItem('sales_dojo_state');
+  location.reload();
 }
 
 function initUI() {
@@ -1980,6 +2007,7 @@ function shareAchievement() {
 window.addEventListener('DOMContentLoaded', () => {
   if (loadState()) {
     document.getElementById('welcome-screen').style.display = 'none';
+    document.getElementById('welcome-actions').style.display = 'flex';
     initUI();
   }
 });
