@@ -1151,19 +1151,33 @@ function openStage(stageId) {
     </div>`;
   });
 
-  // Quiz HTML
-  const quizDone = state.quizScores[stageId] !== undefined;
+  // Quiz HTML with shuffled options
+  const quizDone = state.quizScores[stageId] !== undefined && state.quizScores[stageId] >= 3;
   let quizHtml = '';
   if (!quizDone) {
+    // Store shuffled answer maps for this render
+    if (!window._quizShuffle) window._quizShuffle = {};
+    window._quizShuffle[stageId] = {};
     stage.quiz.forEach((q, qi) => {
+      const mapped = q.opts.map((opt, idx) => ({text: opt, origIdx: idx}));
+      mapped.sort(() => Math.random() - 0.5);
+      window._quizShuffle[stageId][qi] = mapped;
       quizHtml += `<div class="quiz-question" id="quiz-${stageId}-${qi}">
         <div class="q-text">${qi+1}. ${q.q}</div>
         <div class="quiz-options">
-          ${q.opts.map((opt, oi) => `<button class="quiz-opt" onclick="answerQuiz(${stageId},${qi},${oi})">${opt}</button>`).join('')}
+          ${mapped.map((m, si) => `<button class="quiz-opt" onclick="answerQuiz(${stageId},${qi},${si})">${m.text}</button>`).join('')}
         </div>
       </div>`;
     });
   }
+
+  // Progress check
+  const watchedCount = stage.videos.filter((_, i) => state.watchedVideos.includes(`s${stageId}-v${i}`)).length;
+  const collectedCount = stage.cards.filter(c => state.collectedCards.includes(c.id)).length;
+  const quizScore = state.quizScores[stageId];
+  const vidOk = watchedCount >= 3;
+  const cardOk = collectedCount === stage.cards.length;
+  const quizOk = quizScore !== undefined && quizScore >= 3;
 
   el.innerHTML = `
     <button class="stage-back" onclick="showView('map')">← 返回地圖</button>
@@ -1171,6 +1185,11 @@ function openStage(stageId) {
       <div class="stage-icon" style="color:${stage.color}">${stage.icon}</div>
       <h2>第${stage.id}關：${stage.name}</h2>
       <div class="stage-goal">${stage.goal}</div>
+    </div>
+    <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;font-size:.88rem">
+      <span style="padding:4px 10px;border-radius:8px;background:${vidOk ? 'rgba(34,197,94,.15)' : 'var(--bg3)'};color:${vidOk ? 'var(--green)' : 'var(--text2)'};border:1px solid ${vidOk ? 'var(--green)' : 'var(--card-border)'}">📺 影片 ${Math.min(watchedCount,3)}/3 ${vidOk ? '✅' : ''}</span>
+      <span style="padding:4px 10px;border-radius:8px;background:${cardOk ? 'rgba(34,197,94,.15)' : 'var(--bg3)'};color:${cardOk ? 'var(--green)' : 'var(--text2)'};border:1px solid ${cardOk ? 'var(--green)' : 'var(--card-border)'}">🃏 卡牌 ${collectedCount}/${stage.cards.length} ${cardOk ? '✅' : ''}</span>
+      <span style="padding:4px 10px;border-radius:8px;background:${quizOk ? 'rgba(34,197,94,.15)' : 'var(--bg3)'};color:${quizOk ? 'var(--green)' : 'var(--text2)'};border:1px solid ${quizOk ? 'var(--green)' : 'var(--card-border)'}">⚔️ Boss ${quizScore !== undefined ? quizScore+'/5' : '--'} ${quizOk ? '✅' : ''}</span>
     </div>
     <div class="coach-speech">
       <div class="coach-avatar-row">
@@ -1187,12 +1206,13 @@ function openStage(stageId) {
       <div class="boss-header">
         <div class="boss-icon">👹</div>
         <h3>BOSS 戰 — 知識檢驗</h3>
-        <p>${quizDone ? '✅ 已通關！' : '答對所有題目才能擊敗 Boss！'}</p>
+        <p>${quizDone ? '✅ 已通關！' : '答對 3/5 以上才能通過修煉！'}</p>
       </div>
       ${quizDone ? `<div class="boss-result" style="display:block"><h3 style="color:var(--green)">🎉 Boss 已擊敗！</h3><p>得分：${state.quizScores[stageId]}/${stage.quiz.length}</p></div>` : quizHtml}
       <div class="boss-result" id="boss-result-${stageId}">
         <h3 id="boss-msg-${stageId}"></h3>
-        <button class="result-btn" id="boss-btn-${stageId}" style="background:var(--green);color:#000" onclick="completeStage(${stageId})">解鎖下一關！</button>
+        <p id="boss-hint-${stageId}" style="font-size:.9rem;color:var(--text2);margin:8px 0"></p>
+        <button class="result-btn" id="boss-btn-${stageId}" style="display:none"></button>
       </div>
     </div>
   `;
@@ -1251,29 +1271,26 @@ function answerQuiz(stageId, qIdx, optIdx) {
   if (quizAnswered[key]) return;
   quizAnswered[key] = true;
 
+  const shuffled = window._quizShuffle[stageId][qIdx];
+  const correctShuffledIdx = shuffled.findIndex(m => m.origIdx === q.ans);
+
   const qEl = document.getElementById(`quiz-${stageId}-${qIdx}`);
   const btns = qEl.querySelectorAll('.quiz-opt');
   btns.forEach((btn, i) => {
     btn.classList.add('disabled');
-    if (i === q.ans) btn.classList.add('correct');
-    else if (i === optIdx && optIdx !== q.ans) btn.classList.add('wrong');
+    if (i === correctShuffledIdx) btn.classList.add('correct');
+    else if (i === optIdx && optIdx !== correctShuffledIdx) btn.classList.add('wrong');
   });
 
-  if (optIdx === q.ans) addExp(20);
+  if (optIdx === correctShuffledIdx) addExp(20);
 
   // Check if all answered
   const allAnswered = stage.quiz.every((_, i) => quizAnswered[`${stageId}-${i}`]);
   if (allAnswered) {
-    const correct = stage.quiz.filter((qq, i) => {
-      const el = document.getElementById(`quiz-${stageId}-${i}`);
-      return el.querySelector('.quiz-opt.correct.disabled') && !el.querySelector('.quiz-opt.wrong');
-    }).length;
-    // Actually count correct answers
     let score = 0;
     stage.quiz.forEach((qq, i) => {
       const el = document.getElementById(`quiz-${stageId}-${i}`);
-      const wrongEl = el.querySelector('.quiz-opt.wrong');
-      if (!wrongEl) score++;
+      if (!el.querySelector('.quiz-opt.wrong')) score++;
     });
 
     state.quizScores[stageId] = score;
@@ -1281,21 +1298,62 @@ function answerQuiz(stageId, qIdx, optIdx) {
 
     const resultEl = document.getElementById(`boss-result-${stageId}`);
     const msgEl = document.getElementById(`boss-msg-${stageId}`);
+    const hintEl = document.getElementById(`boss-hint-${stageId}`);
     const btnEl = document.getElementById(`boss-btn-${stageId}`);
 
-    if (score === stage.quiz.length) {
-      msgEl.textContent = `🎉 完美通關！${score}/${stage.quiz.length} 全對！`;
-      msgEl.style.color = 'var(--green)';
+    if (score < 3) {
+      msgEl.textContent = `⚔️ 得分：${score}/${stage.quiz.length}，修煉不足！`;
+      msgEl.style.color = 'var(--fire)';
+      hintEl.textContent = '回去多看幾支影片和學習重點，再來挑戰吧！';
+      btnEl.textContent = '🔄 重新挑戰';
+      btnEl.style.background = 'var(--fire)';
+      btnEl.style.color = '#fff';
+      btnEl.onclick = () => retryQuiz(stageId);
       btnEl.style.display = 'inline-block';
-      addExp(50);
     } else {
-      msgEl.textContent = `得分：${score}/${stage.quiz.length}。不完美，但你已經在進步了！`;
-      msgEl.style.color = 'var(--gold)';
-      btnEl.textContent = '繼續前進！';
-      btnEl.style.display = 'inline-block';
+      if (score === stage.quiz.length) { addExp(50); }
+      const unlock = canUnlockStage(stageId);
+      if (unlock.ok) {
+        msgEl.textContent = score === stage.quiz.length ? `🎉 完美通關！${score}/${stage.quiz.length} 全對！` : `✅ 修煉合格！得分：${score}/${stage.quiz.length}`;
+        msgEl.style.color = 'var(--green)';
+        hintEl.textContent = '';
+        btnEl.textContent = '解鎖下一關！';
+        btnEl.style.background = 'var(--green)';
+        btnEl.style.color = '#000';
+        btnEl.onclick = () => completeStage(stageId);
+        btnEl.style.display = 'inline-block';
+      } else {
+        msgEl.textContent = `✅ Boss 戰通過！得分：${score}/${stage.quiz.length}`;
+        msgEl.style.color = 'var(--gold)';
+        let hints = [];
+        if (unlock.watchedCount < 3) hints.push(`📺 還需觀看 ${3 - unlock.watchedCount} 支影片`);
+        if (!unlock.allCards) hints.push('🃏 還需翻開全部技能卡牌');
+        hintEl.innerHTML = '還需要完成以下修煉：<br>' + hints.join('<br>');
+        btnEl.textContent = '↑ 回去完成修煉';
+        btnEl.style.background = 'var(--gold)';
+        btnEl.style.color = '#000';
+        btnEl.onclick = () => window.scrollTo({top: 0, behavior: 'smooth'});
+        btnEl.style.display = 'inline-block';
+      }
     }
     resultEl.style.display = 'block';
   }
+}
+
+function canUnlockStage(stageId) {
+  const stage = STAGES.find(s => s.id === stageId);
+  const watchedCount = stage.videos.filter((_, i) => state.watchedVideos.includes(`s${stageId}-v${i}`)).length;
+  const allCards = stage.cards.every(c => state.collectedCards.includes(c.id));
+  const quizScore = state.quizScores[stageId] || 0;
+  return { ok: watchedCount >= 3 && allCards && quizScore >= 3, watchedCount, allCards, quizScore, totalVideos: stage.videos.length, totalCards: stage.cards.length };
+}
+
+function retryQuiz(stageId) {
+  const stage = STAGES.find(s => s.id === stageId);
+  stage.quiz.forEach((_, i) => delete quizAnswered[`${stageId}-${i}`]);
+  delete state.quizScores[stageId];
+  saveState();
+  openStage(stageId);
 }
 
 function completeStage(stageId) {
