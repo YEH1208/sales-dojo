@@ -1208,7 +1208,20 @@ function openStage(stageId) {
         <h3>BOSS 戰 — 知識檢驗</h3>
         <p>${quizDone ? '✅ 已通關！' : '答對 3/5 以上才能通過修煉！'}</p>
       </div>
-      ${quizDone ? `<div class="boss-result" style="display:block"><h3 style="color:var(--green)">🎉 Boss 已擊敗！</h3><p>得分：${state.quizScores[stageId]}/${stage.quiz.length}</p></div>` : quizHtml}
+      ${quizDone ? (() => {
+        const ul = canUnlockStage(stageId);
+        const alreadyDone = state.completedStages.includes(stageId);
+        if (alreadyDone) {
+          return `<div class="boss-result" style="display:block"><h3 style="color:var(--green)">🎉 Boss 已擊敗！</h3><p>得分：${state.quizScores[stageId]}/${stage.quiz.length}</p></div>`;
+        } else if (ul.ok) {
+          return `<div class="boss-result" style="display:block"><h3 style="color:var(--green)">🎉 Boss 已擊敗！得分：${state.quizScores[stageId]}/${stage.quiz.length}</h3><button class="result-btn" style="display:inline-block;background:var(--green);color:#000;margin-top:12px" onclick="completeStage(${stageId})">解鎖下一關！</button></div>`;
+        } else {
+          let hints = [];
+          if (ul.watchedCount < 3) hints.push('📺 還需觀看 ' + (3 - ul.watchedCount) + ' 支影片');
+          if (!ul.allCards) hints.push('🃏 還需翻開全部技能卡牌');
+          return `<div class="boss-result" style="display:block"><h3 style="color:var(--gold)">✅ Boss 戰通過！得分：${state.quizScores[stageId]}/${stage.quiz.length}</h3><p style="font-size:.9rem;color:var(--text2);margin:8px 0">還需要完成以下修煉：<br>${hints.join('<br>')}</p><button class="result-btn" style="display:inline-block;background:var(--gold);color:#000;margin-top:8px" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑ 回去完成修煉</button></div>`;
+        }
+      })() : quizHtml}
       <div class="boss-result" id="boss-result-${stageId}">
         <h3 id="boss-msg-${stageId}"></h3>
         <p id="boss-hint-${stageId}" style="font-size:.9rem;color:var(--text2);margin:8px 0"></p>
