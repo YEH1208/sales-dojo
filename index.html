@@ -1151,7 +1151,7 @@ function openStage(stageId) {
         <div class="guide-row"><span class="guide-icon">📝</span><span class="guide-label">重點摘要</span><span class="guide-text">${vid.summary}</span></div>
         <div class="guide-row"><span class="guide-icon">💡</span><span class="guide-label">關鍵金句</span><span class="guide-text guide-quote">${vid.keyQuote}</span></div>
         <div class="guide-row"><span class="guide-icon">🎯</span><span class="guide-label">行動建議</span><span class="guide-text">${vid.action}</span></div>
-        ${TRANSCRIPTS[stageId+'-'+vIdx] ? `<button class="transcript-toggle-btn" onclick="event.stopPropagation();toggleTranscript('transcript-${stageId}-${vIdx}')">📖 閱讀完整中文版 ▼</button><div class="transcript-content" id="transcript-${stageId}-${vIdx}">${TRANSCRIPTS[stageId+'-'+vIdx]}</div>` : ''}
+        ${TRANSCRIPTS[stageId+'-'+i] ? `<button class="transcript-toggle-btn" onclick="event.stopPropagation();toggleTranscript('transcript-${stageId}-${i}')">📖 閱讀完整中文版 ▼</button><div class="transcript-content" id="transcript-${stageId}-${i}">${TRANSCRIPTS[stageId+'-'+i]}</div>` : ''}
       </div>` : ''}
     </div>`;
   });
