@@ -837,13 +837,17 @@ const STAGES = [
 
 const LEVELS = [
   {lv:1,title:'見習業務',exp:0},
-  {lv:2,title:'銷售新兵',exp:100},
-  {lv:3,title:'開發獵人',exp:250},
-  {lv:4,title:'說服使者',exp:450},
-  {lv:5,title:'成交達人',exp:700},
-  {lv:6,title:'客戶守護者',exp:1000},
-  {lv:7,title:'效率戰士',exp:1350},
-  {lv:8,title:'銷售宗師',exp:1750}
+  {lv:2,title:'銷售新兵',exp:80},
+  {lv:3,title:'開發學徒',exp:200},
+  {lv:4,title:'說服見習生',exp:350},
+  {lv:5,title:'開發獵人',exp:530},
+  {lv:6,title:'說服使者',exp:750},
+  {lv:7,title:'成交達人',exp:1000},
+  {lv:8,title:'客戶守護者',exp:1300},
+  {lv:9,title:'效率戰士',exp:1650},
+  {lv:10,title:'銷售大師',exp:2050},
+  {lv:11,title:'武林盟主',exp:2500},
+  {lv:12,title:'銷售宗師',exp:3000}
 ];
 
 const COACH_QUOTES = [
@@ -908,6 +912,8 @@ let state = {
   completedStages: [],
   collectedCards: [],
   watchedVideos: [],
+  viewedGuides: [],
+  playedAudios: [],
   quizScores: {},
   streak: 1,
   lastVisit: null
@@ -1234,7 +1240,7 @@ function openStage(stageId) {
 function flipCard(cardId, stageId) {
   if (!state.collectedCards.includes(cardId)) {
     state.collectedCards.push(cardId);
-    addExp(15);
+    addExp(5);
     saveState();
   }
   // Re-render
@@ -1244,7 +1250,14 @@ function flipCard(cardId, stageId) {
 
 function toggleGuide(guideId) {
   const el = document.getElementById(guideId);
-  if (el) el.classList.toggle('open');
+  if (el) {
+    el.classList.toggle('open');
+    if (el.classList.contains('open') && !state.viewedGuides.includes(guideId)) {
+      state.viewedGuides.push(guideId);
+      addExp(10);
+      saveState();
+    }
+  }
 }
 
 function toggleAudio(audioId) {
@@ -1254,6 +1267,11 @@ function toggleAudio(audioId) {
     if (el.classList.contains('show')) {
       const audio = el.querySelector('audio');
       if (audio) audio.play();
+      if (!state.playedAudios.includes(audioId)) {
+        state.playedAudios.push(audioId);
+        addExp(15);
+        saveState();
+      }
     }
   }
 }
@@ -1295,7 +1313,7 @@ function answerQuiz(stageId, qIdx, optIdx) {
     else if (i === optIdx && optIdx !== correctShuffledIdx) btn.classList.add('wrong');
   });
 
-  if (optIdx === correctShuffledIdx) addExp(20);
+  if (optIdx === correctShuffledIdx) addExp(15);
 
   // Check if all answered
   const allAnswered = stage.quiz.every((_, i) => quizAnswered[`${stageId}-${i}`]);
@@ -1324,7 +1342,7 @@ function answerQuiz(stageId, qIdx, optIdx) {
       btnEl.onclick = () => retryQuiz(stageId);
       btnEl.style.display = 'inline-block';
     } else {
-      if (score === stage.quiz.length) { addExp(50); }
+      if (score === stage.quiz.length) { addExp(30); }
       const unlock = canUnlockStage(stageId);
       if (unlock.ok) {
         msgEl.textContent = score === stage.quiz.length ? `🎉 完美通關！${score}/${stage.quiz.length} 全對！` : `✅ 修煉合格！得分：${score}/${stage.quiz.length}`;
@@ -1372,7 +1390,7 @@ function retryQuiz(stageId) {
 function completeStage(stageId) {
   if (!state.completedStages.includes(stageId)) {
     state.completedStages.push(stageId);
-    addExp(100);
+    addExp(80);
     saveState();
     addCoachMessage(`太棒了！你通過了第${stageId}關「${STAGES[stageId-1].name}」！${stageId < 7 ? '下一關等著你！繼續衝！🔥' : '你已經完成所有修煉，成為銷售宗師了！👑'}`);
   }
