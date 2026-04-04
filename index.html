@@ -284,6 +284,13 @@ a{color:var(--gold);text-decoration:none}
 .grad-btn.btn-share{background:linear-gradient(135deg,var(--gold),var(--orange));color:#000}
 .grad-btn.btn-share:hover{box-shadow:0 0 30px rgba(251,191,36,.4)}
 
+/* ===== AUDIO PLAYER ===== */
+.audio-btn{display:flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(34,197,94,.1);border:1px solid var(--green);border-radius:8px;font-size:.85rem;color:var(--green);font-weight:700;margin-top:6px;cursor:pointer;transition:all .2s}
+.audio-btn:hover{background:rgba(34,197,94,.2)}
+.audio-player-wrap{margin-top:8px;display:none}
+.audio-player-wrap.show{display:block}
+.audio-player-wrap audio{width:100%;height:44px;border-radius:8px}
+
 /* ===== RESPONSIVE - TABLET ===== */
 @media(max-width:1024px){
   #stage-view,#stage8-view{max-width:95%;padding:16px}
@@ -1112,10 +1119,14 @@ function openStage(stageId) {
   });
 
   // Videos HTML
+  const AUDIO_FILES = {'1-1':1,'1-2':1};
   let videosHtml = '';
   stage.videos.forEach((vid, i) => {
     const vidKey = `s${stageId}-v${i}`;
     const guideId = `guide-${stageId}-${i}`;
+    const audioKey = `${stageId}-${i+1}`;
+    const hasAudio = AUDIO_FILES[audioKey];
+    const audioId = `audio-${stageId}-${i}`;
     const isWatched = state.watchedVideos.includes(vidKey);
     const mustClass = vid.must ? 'must-watch' : '';
     const watchedClass = isWatched ? 'watched' : '';
@@ -1127,6 +1138,8 @@ function openStage(stageId) {
           ${vid.must ? '<span class="video-badge badge-must">必看</span>' : ''}
           ${isWatched ? '<span class="video-badge badge-watched">已觀看</span>' : ''}
           ${vid.summary ? `<button class="video-guide-btn" onclick="event.stopPropagation();toggleGuide('${guideId}')">📖 查看學習重點 ▼</button>` : ''}
+          ${hasAudio ? `<button class="audio-btn" onclick="event.stopPropagation();toggleAudio('${audioId}')">🔊 聽中文版</button>
+          <div class="audio-player-wrap" id="${audioId}"><audio controls preload="none"><source src="音檔/${audioKey}.m4a" type="audio/mp4"></audio></div>` : ''}
         </div>
         <div class="video-check">${isWatched ? '✓' : ''}</div>
       </div>
@@ -1199,6 +1212,17 @@ function flipCard(cardId, stageId) {
 function toggleGuide(guideId) {
   const el = document.getElementById(guideId);
   if (el) el.classList.toggle('open');
+}
+
+function toggleAudio(audioId) {
+  const el = document.getElementById(audioId);
+  if (el) {
+    el.classList.toggle('show');
+    if (el.classList.contains('show')) {
+      const audio = el.querySelector('audio');
+      if (audio) audio.play();
+    }
+  }
 }
 
 function toggleVideo(vidKey, stageId) {
