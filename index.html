@@ -1206,7 +1206,7 @@ function openStage(stageId) {
           ${isWatched ? '<span class="video-badge badge-watched">已觀看</span>' : ''}
           ${vid.summary ? `<button class="video-guide-btn" onclick="event.stopPropagation();toggleGuide('${guideId}')">📖 查看學習重點 ▼</button>` : ''}
           ${hasAudio ? `<div style="display:flex;gap:6px;align-items:center;margin-top:4px"><button class="audio-btn" onclick="event.stopPropagation();toggleAudio('${audioId}')">🎙️ 祕笈有聲書</button><button class="star-btn ${state.starredAudios.includes(audioKey) ? 'starred' : ''}" onclick="event.stopPropagation();toggleStar('${audioKey}',this)" title="收藏"></button></div>
-          <div class="audio-player-wrap" id="${audioId}"><audio controls preload="none"><source src="音檔/${audioKey}.m4a" type="audio/mp4"></audio></div>` : ''}
+          <div class="audio-player-wrap" id="${audioId}" onclick="event.stopPropagation()"><audio controls preload="none" onclick="event.stopPropagation()"><source src="音檔/${audioKey}.m4a" type="audio/mp4"></audio></div>` : ''}
         </div>
         <div class="video-check">${isWatched ? '✓' : ''}</div>
       </div>
