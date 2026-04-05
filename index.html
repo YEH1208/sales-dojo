@@ -305,9 +305,9 @@ a{color:var(--gold);text-decoration:none}
 .copy-guide-btn{display:flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(0,245,255,.08);border:1px solid var(--neon-cyan);border-radius:8px;font-size:.8rem;color:var(--neon-cyan);font-weight:700;margin-top:10px;cursor:pointer;transition:all .2s;font-family:inherit}
 .copy-guide-btn:hover{background:rgba(0,245,255,.15)}
 .copy-guide-btn.copied{background:rgba(34,197,94,.15);border-color:var(--green);color:var(--green)}
-.star-btn{background:none;border:none;font-size:1.3rem;cursor:pointer;padding:2px 6px;transition:all .2s;opacity:.5}
-.star-btn:hover{opacity:.8;transform:scale(1.2)}
-.star-btn.starred{opacity:1;filter:drop-shadow(0 0 4px rgba(251,191,36,.5))}
+.star-btn{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:8px;font-size:1.2rem;cursor:pointer;padding:4px 10px;transition:all .2s;color:var(--gold)}
+.star-btn:hover{background:rgba(251,191,36,.2);transform:scale(1.1)}
+.star-btn.starred{background:rgba(251,191,36,.15);border-color:var(--gold);filter:drop-shadow(0 0 6px rgba(251,191,36,.5))}
 
 /* ===== PARTICLES ===== */
 .particle{position:fixed;border-radius:50%;pointer-events:none;z-index:0;opacity:0;animation:particle-float linear infinite}
