@@ -169,7 +169,7 @@ a{color:var(--gold);text-decoration:none}
 
 /* ===== COACH CHAT BUBBLE ===== */
 #coach-bubble{position:fixed;bottom:20px;right:20px;z-index:200}
-#coach-toggle{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--neon-cyan),var(--neon-purple));display:flex;align-items:center;justify-content:center;font-size:2rem;box-shadow:0 4px 20px rgba(0,245,255,.3),0 0 40px rgba(179,71,255,.15);transition:all .3s;animation:coach-pulse-cyber 3s infinite}
+#coach-toggle{width:64px;height:64px;border-radius:50%;background:transparent;display:flex;align-items:center;justify-content:center;font-size:2.8rem;box-shadow:none;transition:all .3s;filter:drop-shadow(0 0 8px rgba(249,115,22,.6))drop-shadow(0 0 20px rgba(249,115,22,.3));animation:torch-glow 3s infinite}
 #coach-toggle:hover{transform:scale(1.1)}
 #coach-chat{display:none;position:absolute;bottom:76px;right:0;width:340px;max-height:calc(100vh - 100px);background:var(--bg2);border:2px solid var(--neon-cyan);border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,.5),0 0 20px rgba(0,245,255,.15);overflow:hidden;flex-direction:column}
 #coach-chat.open{display:flex;animation:slide-up .3s}
@@ -305,6 +305,7 @@ a{color:var(--gold);text-decoration:none}
 @keyframes pulse-border-cyber{0%,100%{box-shadow:0 0 10px rgba(0,245,255,.1),0 0 20px rgba(0,245,255,.05)}50%{box-shadow:0 0 25px rgba(0,245,255,.3),0 0 50px rgba(0,245,255,.15)}}
 @keyframes holographic{0%{background-position:100% 100%}100%{background-position:0% 0%}}
 @keyframes coach-pulse-cyber{0%,100%{box-shadow:0 4px 20px rgba(0,245,255,.3),0 0 30px rgba(179,71,255,.1)}50%{box-shadow:0 4px 30px rgba(0,245,255,.5),0 0 50px rgba(179,71,255,.25)}}
+@keyframes torch-glow{0%,100%{filter:drop-shadow(0 0 6px rgba(249,115,22,.5))drop-shadow(0 0 15px rgba(249,115,22,.2))}50%{filter:drop-shadow(0 0 12px rgba(249,115,22,.8))drop-shadow(0 0 30px rgba(249,115,22,.4))}}
 
 /* ===== RESPONSIVE - TABLET ===== */
 @media(max-width:1024px){
