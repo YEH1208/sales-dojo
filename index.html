@@ -305,9 +305,10 @@ a{color:var(--gold);text-decoration:none}
 .copy-guide-btn{display:flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(0,245,255,.08);border:1px solid var(--neon-cyan);border-radius:8px;font-size:.8rem;color:var(--neon-cyan);font-weight:700;margin-top:10px;cursor:pointer;transition:all .2s;font-family:inherit}
 .copy-guide-btn:hover{background:rgba(0,245,255,.15)}
 .copy-guide-btn.copied{background:rgba(34,197,94,.15);border-color:var(--green);color:var(--green)}
-.star-btn{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:8px;font-size:1.2rem;cursor:pointer;padding:4px 10px;transition:all .2s;color:var(--gold)}
-.star-btn:hover{background:rgba(251,191,36,.2);transform:scale(1.1)}
-.star-btn.starred{background:rgba(251,191,36,.15);border-color:var(--gold);filter:drop-shadow(0 0 6px rgba(251,191,36,.5))}
+.star-btn{background:none;border:none;cursor:pointer;padding:0;transition:all .2s;line-height:1;font-size:0}
+.star-btn::before{content:'★';font-size:1.4rem;color:var(--card-border);transition:all .2s}
+.star-btn:hover::before{color:rgba(251,191,36,.6);transform:scale(1.1)}
+.star-btn.starred::before{color:var(--gold);filter:drop-shadow(0 0 6px rgba(251,191,36,.5))}
 
 /* ===== PARTICLES ===== */
 .particle{position:fixed;border-radius:50%;pointer-events:none;z-index:0;opacity:0;animation:particle-float linear infinite}
@@ -1202,7 +1203,7 @@ function openStage(stageId) {
           ${vid.must ? '<span class="video-badge badge-must">必看</span>' : ''}
           ${isWatched ? '<span class="video-badge badge-watched">已觀看</span>' : ''}
           ${vid.summary ? `<button class="video-guide-btn" onclick="event.stopPropagation();toggleGuide('${guideId}')">📖 查看學習重點 ▼</button>` : ''}
-          ${hasAudio ? `<div style="display:flex;gap:6px;align-items:center;margin-top:4px"><button class="audio-btn" onclick="event.stopPropagation();toggleAudio('${audioId}')">🎙️ 祕笈有聲書</button><button class="star-btn ${state.starredAudios.includes(audioKey) ? 'starred' : ''}" onclick="event.stopPropagation();toggleStar('${audioKey}',this)" title="收藏">${state.starredAudios.includes(audioKey) ? '⭐' : '☆'}</button></div>
+          ${hasAudio ? `<div style="display:flex;gap:6px;align-items:center;margin-top:4px"><button class="audio-btn" onclick="event.stopPropagation();toggleAudio('${audioId}')">🎙️ 祕笈有聲書</button><button class="star-btn ${state.starredAudios.includes(audioKey) ? 'starred' : ''}" onclick="event.stopPropagation();toggleStar('${audioKey}',this)" title="收藏"></button></div>
           <div class="audio-player-wrap" id="${audioId}"><audio controls preload="none"><source src="音檔/${audioKey}.m4a" type="audio/mp4"></audio></div>` : ''}
         </div>
         <div class="video-check">${isWatched ? '✓' : ''}</div>
@@ -1339,11 +1340,9 @@ function toggleStar(audioKey, btn) {
   const idx = state.starredAudios.indexOf(audioKey);
   if (idx === -1) {
     state.starredAudios.push(audioKey);
-    btn.textContent = '⭐';
     btn.classList.add('starred');
   } else {
     state.starredAudios.splice(idx, 1);
-    btn.textContent = '☆';
     btn.classList.remove('starred');
   }
   saveState();
