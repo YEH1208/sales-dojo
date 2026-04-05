@@ -1205,11 +1205,11 @@ function openStage(stageId) {
           ${vid.must ? '<span class="video-badge badge-must">必看</span>' : ''}
           ${isWatched ? '<span class="video-badge badge-watched">已觀看</span>' : ''}
           ${vid.summary ? `<button class="video-guide-btn" onclick="event.stopPropagation();toggleGuide('${guideId}')">📖 查看學習重點 ▼</button>` : ''}
-          ${hasAudio ? `<div style="display:flex;gap:6px;align-items:center;margin-top:4px"><button class="audio-btn" onclick="event.stopPropagation();toggleAudio('${audioId}')">🎙️ 祕笈有聲書</button><button class="star-btn ${state.starredAudios.includes(audioKey) ? 'starred' : ''}" onclick="event.stopPropagation();toggleStar('${audioKey}',this)" title="收藏"></button></div>
-          <div class="audio-player-wrap" id="${audioId}" onclick="event.stopPropagation()"><audio controls preload="none" onclick="event.stopPropagation()"><source src="音檔/${audioKey}.m4a" type="audio/mp4"></audio></div>` : ''}
+          ${hasAudio ? `<div style="display:flex;gap:6px;align-items:center;margin-top:4px"><button class="audio-btn" onclick="event.stopPropagation();toggleAudio('${audioId}')">🎙️ 祕笈有聲書</button><button class="star-btn ${state.starredAudios.includes(audioKey) ? 'starred' : ''}" onclick="event.stopPropagation();toggleStar('${audioKey}',this)" title="收藏"></button></div>` : ''}
         </div>
         <div class="video-check">${isWatched ? '✓' : ''}</div>
       </div>
+      ${hasAudio ? `<div class="audio-player-wrap" id="${audioId}" style="padding:0 16px"><audio controls preload="none" style="width:100%;height:44px;border-radius:8px"><source src="音檔/${audioKey}.m4a" type="audio/mp4"></audio></div>` : ''}
       ${vid.summary ? `<div class="video-guide" id="${guideId}">
         <div class="guide-row"><span class="guide-icon">📝</span><span class="guide-label">重點摘要</span><span class="guide-text">${vid.summary}</span></div>
         <div class="guide-row"><span class="guide-icon">💡</span><span class="guide-label">關鍵金句</span><span class="guide-text guide-quote">${vid.keyQuote}</span></div>
