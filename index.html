@@ -171,8 +171,8 @@ a{color:var(--gold);text-decoration:none}
 
 /* ===== COACH CHAT BUBBLE ===== */
 #coach-bubble{position:fixed;bottom:20px;right:20px;z-index:200}
-#coach-toggle{width:64px;height:64px;border-radius:50%;background:transparent;display:flex;align-items:center;justify-content:center;font-size:2.8rem;box-shadow:none;transition:all .3s;filter:drop-shadow(0 0 8px rgba(249,115,22,.6))drop-shadow(0 0 20px rgba(249,115,22,.3));animation:torch-glow 3s infinite}
-#coach-toggle:hover{transform:scale(1.1)}
+#coach-toggle{width:64px;height:64px;border-radius:50%;background:transparent;display:flex;align-items:center;justify-content:center;font-size:2.8rem;box-shadow:none;transition:all .3s;filter:drop-shadow(0 0 8px rgba(249,115,22,.6))drop-shadow(0 0 20px rgba(249,115,22,.3));animation:torch-glow 3s infinite,torch-flicker .15s infinite alternate,torch-sway 2s ease-in-out infinite}
+#coach-toggle:hover{transform:scale(1.15);filter:drop-shadow(0 0 12px rgba(249,115,22,.8))drop-shadow(0 0 30px rgba(249,115,22,.5))}
 #coach-chat{display:none;position:absolute;bottom:76px;right:0;width:340px;max-height:calc(100vh - 100px);background:var(--bg2);border:2px solid var(--neon-cyan);border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,.5),0 0 20px rgba(0,245,255,.15);overflow:hidden;flex-direction:column}
 #coach-chat.open{display:flex;animation:slide-up .3s}
 .chat-messages{flex:1;min-height:0;overflow-y:auto}
@@ -320,6 +320,8 @@ a{color:var(--gold);text-decoration:none}
 @keyframes coach-pulse-cyber{0%,100%{box-shadow:0 4px 20px rgba(0,245,255,.3),0 0 30px rgba(179,71,255,.1)}50%{box-shadow:0 4px 30px rgba(0,245,255,.5),0 0 50px rgba(179,71,255,.25)}}
 @keyframes metal-shine{0%{transform:translate(-100%,-100%);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translate(100%,100%);opacity:0}}
 @keyframes torch-glow{0%,100%{filter:drop-shadow(0 0 6px rgba(249,115,22,.5))drop-shadow(0 0 15px rgba(249,115,22,.2))}50%{filter:drop-shadow(0 0 12px rgba(249,115,22,.8))drop-shadow(0 0 30px rgba(249,115,22,.4))}}
+@keyframes torch-flicker{0%{opacity:.85;transform:scale(1)}100%{opacity:1;transform:scale(1.04)}}
+@keyframes torch-sway{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg)}}
 
 /* ===== RESPONSIVE - TABLET ===== */
 @media(max-width:1024px){
