@@ -1964,18 +1964,17 @@ function openCardModal(cardId) {
 }
 
 let soulMode = false;
-let savedContent = '';
 
 function flipToSoul() {
   const questions = SOUL_QUESTIONS[currentModalCardId];
   if (!questions) return;
+  const modal = document.getElementById('card-modal');
 
-  const backEl = document.getElementById('card-modal-back');
-  backEl.style.animation = 'card-flip-swap .5s ease-in-out';
+  // Step 1: Flip back to front (rotateY 0)
+  modal.classList.remove('flipping');
 
-  // At halfway point (250ms), swap content
+  // Step 2: While front is showing, swap back content to soul questions
   setTimeout(() => {
-    savedContent = document.getElementById('cm-content').innerHTML;
     document.getElementById('cm-content').innerHTML = `<div class="cm-soul-view">
       <div class="cm-soul-title">🔮 靈魂拷問</div>
       <div class="soul-q-row">${questions.map((q, i) => `<button class="soul-q-btn" id="sq-btn-${i}" onclick="event.stopPropagation();showSoulDetail(${i})">${i+1}</button>`).join('')}</div>
@@ -1986,9 +1985,12 @@ function flipToSoul() {
     document.getElementById('cm-soul-btn').textContent = '回到心法';
     document.getElementById('cm-soul-btn').onclick = flipBackToContent;
     soulMode = true;
-  }, 250);
+  }, 400);
 
-  setTimeout(() => { backEl.style.animation = ''; }, 500);
+  // Step 3: Flip to back again (now showing soul content)
+  setTimeout(() => {
+    modal.classList.add('flipping');
+  }, 600);
 }
 
 function showSoulDetail(idx) {
@@ -1999,24 +2001,27 @@ function showSoulDetail(idx) {
 }
 
 function flipBackToContent() {
-  const backEl = document.getElementById('card-modal-back');
-  backEl.style.animation = 'card-flip-swap .5s ease-in-out';
+  const modal = document.getElementById('card-modal');
 
+  // Step 1: Flip back to front
+  modal.classList.remove('flipping');
+
+  // Step 2: Restore original content
   setTimeout(() => {
-    document.getElementById('cm-content').textContent = savedContent;
+    let card = null;
+    STAGES.forEach(s => s.cards.forEach(c => { if (c.id === currentModalCardId) card = c; }));
+    if (card) document.getElementById('cm-content').textContent = card.content;
     document.getElementById('cm-title').style.display = '';
     document.getElementById('cm-rarity').style.display = '';
     document.getElementById('cm-soul-btn').textContent = '靈魂拷問';
     document.getElementById('cm-soul-btn').onclick = flipToSoul;
     soulMode = false;
+  }, 400);
 
-    // Re-populate content from card data
-    let card = null;
-    STAGES.forEach(s => s.cards.forEach(c => { if (c.id === currentModalCardId) card = c; }));
-    if (card) document.getElementById('cm-content').textContent = card.content;
-  }, 250);
-
-  setTimeout(() => { backEl.style.animation = ''; }, 500);
+  // Step 3: Flip to back again
+  setTimeout(() => {
+    modal.classList.add('flipping');
+  }, 600);
 }
 
 function closeCardModal() {
