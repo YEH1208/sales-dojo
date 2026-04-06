@@ -305,16 +305,41 @@ a{color:var(--gold);text-decoration:none}
 
 /* ===== EGG TOGGLE RESET ===== */
 .egg-reset-label{font-size:.78rem;color:var(--text3);letter-spacing:1px}
-.egg-toggle{width:100px;height:48px;cursor:pointer;position:relative}
-.egg-pan{width:100%;height:100%;background:linear-gradient(180deg,#3a3a3a,#2a2a2a);border-radius:24px;position:relative;box-shadow:inset 0 2px 6px rgba(0,0,0,.5),0 2px 8px rgba(0,0,0,.3);overflow:hidden}
-.egg-pan::before{content:'';position:absolute;inset:2px;border-radius:22px;background:linear-gradient(180deg,#333,#1a1a1a);z-index:0}
-.egg{position:absolute;left:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;z-index:1;transition:all .4s cubic-bezier(.68,-.55,.265,1.55)}
-.egg-white{position:absolute;inset:0;background:rgba(255,255,255,.15);border-radius:50%;transition:all .4s}
-.egg-yolk{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:16px;height:16px;background:radial-gradient(circle,#555 30%,#444 100%);border-radius:50%;transition:all .4s;box-shadow:0 0 4px rgba(0,0,0,.3)}
-.egg-toggle.active .egg{left:calc(100% - 42px)}
-.egg-toggle.active .egg-white{background:rgba(255,255,255,.9);box-shadow:0 0 10px rgba(255,255,255,.3);border-radius:45% 50% 48% 52%}
-.egg-toggle.active .egg-yolk{background:radial-gradient(circle,#fbbf24 30%,#f59e0b 100%);box-shadow:0 0 8px rgba(251,191,36,.5)}
-.egg-toggle.active .egg-pan::before{background:linear-gradient(180deg,#2a2a2a,#1a1a1a)}
+.egg-toggle{width:120px;height:56px;cursor:pointer;position:relative}
+/* Pan - dark iron skillet look */
+.egg-pan{width:100%;height:100%;background:linear-gradient(170deg,#4a4a4a 0%,#2d2d2d 30%,#1a1a1a 70%,#0d0d0d 100%);border-radius:28px;position:relative;box-shadow:0 4px 12px rgba(0,0,0,.6),0 1px 3px rgba(255,255,255,.05) inset,0 -2px 6px rgba(0,0,0,.4) inset;overflow:hidden}
+/* Pan inner surface - darker with subtle texture */
+.egg-pan::before{content:'';position:absolute;inset:3px;border-radius:25px;background:radial-gradient(ellipse at 40% 30%,rgba(60,60,60,.6),rgba(15,15,15,.9) 70%);z-index:0}
+/* Pan rim highlight */
+.egg-pan::after{content:'';position:absolute;top:1px;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);z-index:0}
+/* Egg container */
+.egg{position:absolute;left:8px;top:50%;transform:translateY(-50%);width:40px;height:40px;z-index:1;transition:all .5s cubic-bezier(.68,-.55,.265,1.55)}
+/* Egg white - raw state (translucent blob) */
+.egg-white{position:absolute;inset:-2px;background:rgba(200,200,200,.12);border-radius:50%;transition:all .5s;filter:blur(0.5px)}
+/* Egg yolk - raw state (pale grey) */
+.egg-yolk{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:18px;height:18px;background:radial-gradient(circle at 40% 38%,#666 0%,#4a4a4a 50%,#3a3a3a 100%);border-radius:50%;transition:all .5s;box-shadow:0 1px 3px rgba(0,0,0,.4) inset}
+/* Yolk highlight dot - raw */
+.egg-yolk::after{content:'';position:absolute;top:4px;left:5px;width:4px;height:3px;background:rgba(255,255,255,.08);border-radius:50%;transition:all .5s}
+
+/* === ACTIVE STATE: Cooked egg === */
+.egg-toggle.active .egg{left:calc(100% - 50px)}
+/* Cooked egg white - irregular, opaque, with crispy edges */
+.egg-toggle.active .egg-white{
+  inset:-6px -4px -5px -7px;
+  background:radial-gradient(ellipse at 45% 50%,rgba(255,255,255,.95) 40%,rgba(245,240,230,.85) 65%,rgba(220,200,170,.4) 80%,transparent 100%);
+  border-radius:42% 55% 48% 52% / 45% 50% 55% 48%;
+  box-shadow:0 2px 8px rgba(0,0,0,.2),0 0 0 1px rgba(200,180,140,.15);
+  filter:none}
+/* Cooked yolk - golden with depth */
+.egg-toggle.active .egg-yolk{
+  width:20px;height:20px;
+  background:radial-gradient(circle at 38% 35%,#ffe066 0%,#fbbf24 30%,#f59e0b 60%,#d97706 100%);
+  box-shadow:0 2px 4px rgba(0,0,0,.3),0 0 12px rgba(251,191,36,.4),0 1px 2px rgba(251,191,36,.6) inset}
+/* Yolk highlight dot - cooked (shiny) */
+.egg-toggle.active .egg-yolk::after{top:4px;left:5px;width:5px;height:4px;background:rgba(255,255,255,.6);border-radius:50%}
+/* Pan gets slightly hotter looking */
+.egg-toggle.active .egg-pan{box-shadow:0 4px 12px rgba(0,0,0,.6),0 1px 3px rgba(255,255,255,.05) inset,0 -2px 6px rgba(0,0,0,.4) inset,0 0 20px rgba(249,115,22,.08)}
+
 .egg-confirm{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--fire);animation:fade-in .3s}
 .egg-confirm button{background:var(--fire);color:#fff;border:none;padding:4px 14px;border-radius:8px;font-size:.78rem;font-family:inherit;cursor:pointer;font-weight:700;transition:all .2s}
 .egg-confirm button:hover{background:#dc2626}
