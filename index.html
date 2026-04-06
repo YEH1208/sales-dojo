@@ -303,6 +303,22 @@ a{color:var(--gold);text-decoration:none}
 .audio-player-wrap.show{display:block}
 .audio-player-wrap audio{width:100%;height:44px;border-radius:8px}
 
+/* ===== EGG TOGGLE RESET ===== */
+.egg-reset-label{font-size:.78rem;color:var(--text3);letter-spacing:1px}
+.egg-toggle{width:100px;height:48px;cursor:pointer;position:relative}
+.egg-pan{width:100%;height:100%;background:linear-gradient(180deg,#3a3a3a,#2a2a2a);border-radius:24px;position:relative;box-shadow:inset 0 2px 6px rgba(0,0,0,.5),0 2px 8px rgba(0,0,0,.3);overflow:hidden}
+.egg-pan::before{content:'';position:absolute;inset:2px;border-radius:22px;background:linear-gradient(180deg,#333,#1a1a1a);z-index:0}
+.egg{position:absolute;left:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;z-index:1;transition:all .4s cubic-bezier(.68,-.55,.265,1.55)}
+.egg-white{position:absolute;inset:0;background:rgba(255,255,255,.15);border-radius:50%;transition:all .4s}
+.egg-yolk{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:16px;height:16px;background:radial-gradient(circle,#555 30%,#444 100%);border-radius:50%;transition:all .4s;box-shadow:0 0 4px rgba(0,0,0,.3)}
+.egg-toggle.active .egg{left:calc(100% - 42px)}
+.egg-toggle.active .egg-white{background:rgba(255,255,255,.9);box-shadow:0 0 10px rgba(255,255,255,.3);border-radius:45% 50% 48% 52%}
+.egg-toggle.active .egg-yolk{background:radial-gradient(circle,#fbbf24 30%,#f59e0b 100%);box-shadow:0 0 8px rgba(251,191,36,.5)}
+.egg-toggle.active .egg-pan::before{background:linear-gradient(180deg,#2a2a2a,#1a1a1a)}
+.egg-confirm{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--fire);animation:fade-in .3s}
+.egg-confirm button{background:var(--fire);color:#fff;border:none;padding:4px 14px;border-radius:8px;font-size:.78rem;font-family:inherit;cursor:pointer;font-weight:700;transition:all .2s}
+.egg-confirm button:hover{background:#dc2626}
+
 /* ===== COPY & STAR BUTTONS ===== */
 .copy-guide-btn{display:flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(0,245,255,.08);border:1px solid var(--neon-cyan);border-radius:8px;font-size:.8rem;color:var(--neon-cyan);font-weight:700;margin-top:10px;cursor:pointer;transition:all .2s;font-family:inherit}
 .copy-guide-btn:hover{background:rgba(0,245,255,.15)}
@@ -500,8 +516,20 @@ a{color:var(--gold);text-decoration:none}
   <p class="subtitle">Sales Dojo - 讓你的銷售力覺醒！</p>
   <input type="text" id="player-name-input" placeholder="輸入你的名字，勇者" maxlength="12">
   <button class="start-btn" onclick="startGame()">開始修煉！</button>
-  <div id="welcome-actions" style="display:none;margin-top:16px;display:flex;flex-direction:column;gap:8px;align-items:center">
-    <button onclick="resetProgress()" style="background:none;border:1px solid var(--fire);color:var(--fire);padding:8px 20px;border-radius:10px;font-size:.85rem;font-family:inherit;cursor:pointer">🗑️ 重置所有進度</button>
+  <div id="welcome-actions" style="display:none;margin-top:24px;display:flex;flex-direction:column;gap:8px;align-items:center">
+    <div class="egg-reset-label">重置修煉場</div>
+    <div class="egg-toggle" id="egg-toggle" onclick="toggleEggReset()">
+      <div class="egg-pan">
+        <div class="egg" id="egg-el">
+          <div class="egg-white"></div>
+          <div class="egg-yolk"></div>
+        </div>
+      </div>
+    </div>
+    <div class="egg-confirm" id="egg-confirm" style="display:none">
+      <span>確定要重新修煉嗎？</span>
+      <button onclick="confirmEggReset()">確定重置</button>
+    </div>
   </div>
 </div>
 
@@ -1014,11 +1042,36 @@ function showWelcome() {
   if (window._hexBg) window._hexBg.start();
 }
 
-function resetProgress() {
-  if (!confirm('⚠️ 確定要重置所有進度嗎？\n\n這會清除你的等級、卡牌、影片記錄和所有闖關進度，無法復原！')) return;
-  if (!confirm('⚠️ 再次確認：真的要重置嗎？')) return;
+let eggResetTimer = null;
+function toggleEggReset() {
+  const toggle = document.getElementById('egg-toggle');
+  const confirm = document.getElementById('egg-confirm');
+  if (toggle.classList.contains('active')) {
+    // Cancel
+    toggle.classList.remove('active');
+    confirm.style.display = 'none';
+    if (eggResetTimer) { clearTimeout(eggResetTimer); eggResetTimer = null; }
+  } else {
+    // Activate
+    toggle.classList.add('active');
+    confirm.style.display = 'flex';
+    // Auto-cancel after 5 seconds
+    eggResetTimer = setTimeout(() => {
+      toggle.classList.remove('active');
+      confirm.style.display = 'none';
+      eggResetTimer = null;
+    }, 5000);
+  }
+}
+
+function confirmEggReset() {
+  if (eggResetTimer) { clearTimeout(eggResetTimer); eggResetTimer = null; }
   localStorage.removeItem('sales_dojo_state');
   location.reload();
+}
+
+function resetProgress() {
+  toggleEggReset();
 }
 
 function initUI() {
