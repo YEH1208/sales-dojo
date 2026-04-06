@@ -232,9 +232,11 @@ a{color:var(--gold);text-decoration:none}
 .cm-buttons button:hover{box-shadow:0 0 15px rgba(251,191,36,.3)}
 .cm-soul-view{display:flex;flex-direction:column;gap:10px;flex:1;animation:fade-in .3s}
 .cm-soul-view .cm-soul-title{font-size:1rem;font-weight:900;color:var(--neon-purple);text-align:center}
-.cm-soul-view .soul-q-btn{padding:14px 16px;background:rgba(179,71,255,.08);border:1px solid rgba(179,71,255,.25);border-radius:12px;color:var(--text);font-weight:700;font-size:.95rem;font-family:inherit;cursor:pointer;text-align:left;transition:all .2s}
+.cm-soul-view .soul-q-row{display:flex;gap:8px;justify-content:center}
+.cm-soul-view .soul-q-btn{padding:10px 0;background:rgba(179,71,255,.08);border:1px solid rgba(179,71,255,.25);border-radius:12px;color:var(--text);font-weight:700;font-size:.95rem;font-family:inherit;cursor:pointer;text-align:center;transition:all .2s;flex:1}
 .cm-soul-view .soul-q-btn:hover{background:rgba(179,71,255,.18);border-color:var(--neon-purple)}
-.cm-soul-view .soul-q-detail{padding:16px;background:rgba(179,71,255,.06);border:1px solid rgba(179,71,255,.2);border-radius:12px;color:var(--text);font-size:1rem;line-height:1.85;animation:fade-in .3s}
+.cm-soul-view .soul-q-btn.active{background:rgba(179,71,255,.2);border-color:var(--neon-purple)}
+.cm-soul-view .soul-q-detail{padding:16px;background:rgba(179,71,255,.06);border:1px solid rgba(179,71,255,.2);border-radius:12px;color:var(--text);font-size:1.05rem;line-height:1.9;animation:fade-in .3s;flex:1}
 @keyframes card-flip-swap{0%{transform:scaleX(1)}50%{transform:scaleX(0)}100%{transform:scaleX(1)}}
 .cm-legend .card-modal-back{border-color:var(--gold);box-shadow:0 0 35px rgba(251,191,36,.25)}
 .cm-rare .card-modal-back{border-color:var(--blue);box-shadow:0 0 30px rgba(59,130,246,.2)}
@@ -1976,7 +1978,7 @@ function flipToSoul() {
     savedContent = document.getElementById('cm-content').innerHTML;
     document.getElementById('cm-content').innerHTML = `<div class="cm-soul-view">
       <div class="cm-soul-title">🔮 靈魂拷問</div>
-      ${questions.map((q, i) => `<button class="soul-q-btn" onclick="event.stopPropagation();showSoulDetail(${i})">靈魂拷問 ${i+1}</button>`).join('')}
+      <div class="soul-q-row">${questions.map((q, i) => `<button class="soul-q-btn" id="sq-btn-${i}" onclick="event.stopPropagation();showSoulDetail(${i})">${i+1}</button>`).join('')}</div>
       <div id="soul-detail"></div>
     </div>`;
     document.getElementById('cm-title').style.display = 'none';
@@ -1993,6 +1995,7 @@ function showSoulDetail(idx) {
   const questions = SOUL_QUESTIONS[currentModalCardId];
   if (!questions) return;
   document.getElementById('soul-detail').innerHTML = `<div class="soul-q-detail">${questions[idx]}</div>`;
+  document.querySelectorAll('.soul-q-btn').forEach((b,i) => b.classList.toggle('active', i===idx));
 }
 
 function flipBackToContent() {
