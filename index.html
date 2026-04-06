@@ -566,6 +566,8 @@ a{color:var(--gold);text-decoration:none}
       <button onclick="confirmEggReset()">確定重置</button>
     </div>
   </div>
+  <button id="bgm-toggle" onclick="toggleBgm()" style="position:absolute;bottom:16px;right:16px;background:none;border:none;font-size:1.3rem;cursor:pointer;opacity:.4;transition:opacity .2s;z-index:2" title="背景音樂">🔇</button>
+  <audio id="bgm-audio" loop preload="none"><source src="音檔/bgm.mp3" type="audio/mpeg"></audio>
 </div>
 
 <!-- ===== STATUS BAR ===== -->
@@ -1051,12 +1053,43 @@ function loadState() {
 // ================================================================
 // GAME LOGIC
 // ================================================================
+let bgmOn = false;
+
+function toggleBgm() {
+  const audio = document.getElementById('bgm-audio');
+  const btn = document.getElementById('bgm-toggle');
+  if (bgmOn) {
+    audio.pause();
+    btn.textContent = '🔇';
+    btn.style.opacity = '.4';
+    bgmOn = false;
+  } else {
+    audio.volume = 0.15;
+    audio.play().catch(() => {});
+    btn.textContent = '🔊';
+    btn.style.opacity = '.7';
+    bgmOn = true;
+  }
+}
+
+function fadeBgmOut() {
+  const audio = document.getElementById('bgm-audio');
+  if (!bgmOn || audio.paused) return;
+  let vol = audio.volume;
+  const fade = setInterval(() => {
+    vol -= 0.01;
+    if (vol <= 0) { clearInterval(fade); audio.pause(); audio.volume = 0.15; }
+    else audio.volume = vol;
+  }, 50);
+}
+
 function startGame() {
   const nameInput = document.getElementById('player-name-input');
   state.name = nameInput.value.trim() || '勇者';
   saveState();
   document.getElementById('welcome-screen').classList.add('hidden');
   if (window._hexBg) window._hexBg.stop();
+  fadeBgmOut();
   setTimeout(() => {
     document.getElementById('welcome-screen').style.display = 'none';
     initUI();
