@@ -229,12 +229,13 @@ a{color:var(--gold);text-decoration:none}
 .card-modal-back .cm-content{font-size:1.05rem;color:var(--text);line-height:2;flex:1}
 .card-modal-back .cm-close{margin-top:16px;padding:8px 24px;background:linear-gradient(135deg,var(--gold),var(--orange));color:#000;font-weight:900;border-radius:10px;font-size:.95rem;align-self:center}
 .cm-buttons{display:flex;gap:8px;align-self:center;margin-top:12px;flex-shrink:0}
-.cm-soul-btn{padding:8px 16px;background:rgba(179,71,255,.15);border:1px solid var(--neon-purple);color:var(--neon-purple);font-weight:700;border-radius:10px;font-size:.85rem;font-family:inherit;cursor:pointer;transition:all .2s}
-.cm-soul-btn:hover{background:rgba(179,71,255,.25)}
-.cm-soul{font-size:.88rem;color:var(--text);line-height:1.8;animation:fade-in .3s;overflow-y:auto;flex:1;min-height:0}
-.cm-soul .soul-q{margin-bottom:12px;padding:10px 12px;background:rgba(179,71,255,.06);border-left:3px solid var(--neon-purple);border-radius:0 8px 8px 0}
-.cm-soul .soul-q-num{font-size:.75rem;color:var(--neon-purple);font-weight:900;margin-bottom:4px}
-.cm-soul .soul-q-text{color:var(--text);font-size:.9rem;line-height:1.7}
+.cm-soul-btn{padding:8px 24px;background:linear-gradient(135deg,var(--neon-purple),var(--neon-cyan));color:#000;font-weight:900;border:none;border-radius:10px;font-size:.85rem;font-family:inherit;cursor:pointer;transition:all .2s}
+.cm-soul-btn:hover{transform:scale(1.03);box-shadow:0 0 15px rgba(179,71,255,.3)}
+.cm-soul{animation:fade-in .3s;overflow-y:auto;flex:1;min-height:0;display:flex;flex-direction:column;gap:8px}
+.cm-soul .soul-q-btn{padding:12px 16px;background:rgba(179,71,255,.1);border:1px solid rgba(179,71,255,.3);border-radius:12px;color:var(--neon-purple);font-weight:700;font-size:.92rem;font-family:inherit;cursor:pointer;text-align:left;transition:all .2s;display:flex;align-items:center;gap:8px}
+.cm-soul .soul-q-btn:hover{background:rgba(179,71,255,.2);border-color:var(--neon-purple)}
+.cm-soul .soul-q-btn .sq-icon{font-size:1.1rem;flex-shrink:0}
+.cm-soul .soul-q-detail{padding:14px 16px;background:rgba(179,71,255,.06);border:1px solid rgba(179,71,255,.2);border-radius:12px;color:var(--text);font-size:.95rem;line-height:1.8;animation:fade-in .3s}
 .cm-legend .card-modal-back{border-color:var(--gold);box-shadow:0 0 35px rgba(251,191,36,.25)}
 .cm-rare .card-modal-back{border-color:var(--blue);box-shadow:0 0 30px rgba(59,130,246,.2)}
 
@@ -1969,9 +1970,9 @@ function toggleSoulQuestions() {
     const questions = SOUL_QUESTIONS[currentModalCardId];
     if (!questions) return;
     soulEl.innerHTML = questions.map((q, i) =>
-      `<div class="soul-q"><div class="soul-q-num">拷問 ${i+1}</div><div class="soul-q-text">${q}</div></div>`
-    ).join('');
-    soulEl.style.display = 'block';
+      `<button class="soul-q-btn" onclick="event.stopPropagation();showSoulDetail(${i})"><span class="sq-icon">🔮</span>靈魂拷問 ${i+1}</button>`
+    ).join('') + '<div id="soul-detail"></div>';
+    soulEl.style.display = 'flex';
     contentEl.style.display = 'none';
     btn.textContent = '📖 回到心法';
   } else {
@@ -1979,6 +1980,13 @@ function toggleSoulQuestions() {
     contentEl.style.display = 'block';
     btn.textContent = '🔮 靈魂拷問';
   }
+}
+
+function showSoulDetail(idx) {
+  const questions = SOUL_QUESTIONS[currentModalCardId];
+  if (!questions) return;
+  const detailEl = document.getElementById('soul-detail');
+  detailEl.innerHTML = `<div class="soul-q-detail">${questions[idx]}</div>`;
 }
 
 function closeCardModal() {
