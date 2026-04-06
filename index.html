@@ -228,6 +228,13 @@ a{color:var(--gold);text-decoration:none}
 .card-modal-back .cm-title{font-size:1.2rem;font-weight:900;color:var(--gold);margin-bottom:16px}
 .card-modal-back .cm-content{font-size:1.05rem;color:var(--text);line-height:2;flex:1}
 .card-modal-back .cm-close{margin-top:16px;padding:8px 24px;background:linear-gradient(135deg,var(--gold),var(--orange));color:#000;font-weight:900;border-radius:10px;font-size:.95rem;align-self:center}
+.cm-buttons{display:flex;gap:8px;align-self:center;margin-top:12px;flex-shrink:0}
+.cm-soul-btn{padding:8px 16px;background:rgba(179,71,255,.15);border:1px solid var(--neon-purple);color:var(--neon-purple);font-weight:700;border-radius:10px;font-size:.85rem;font-family:inherit;cursor:pointer;transition:all .2s}
+.cm-soul-btn:hover{background:rgba(179,71,255,.25)}
+.cm-soul{font-size:.88rem;color:var(--text);line-height:1.8;animation:fade-in .3s;overflow-y:auto;flex:1;min-height:0}
+.cm-soul .soul-q{margin-bottom:12px;padding:10px 12px;background:rgba(179,71,255,.06);border-left:3px solid var(--neon-purple);border-radius:0 8px 8px 0}
+.cm-soul .soul-q-num{font-size:.75rem;color:var(--neon-purple);font-weight:900;margin-bottom:4px}
+.cm-soul .soul-q-text{color:var(--text);font-size:.9rem;line-height:1.7}
 .cm-legend .card-modal-back{border-color:var(--gold);box-shadow:0 0 35px rgba(251,191,36,.25)}
 .cm-rare .card-modal-back{border-color:var(--blue);box-shadow:0 0 30px rgba(59,130,246,.2)}
 
@@ -612,7 +619,11 @@ a{color:var(--gold);text-decoration:none}
         <div class="cm-rarity" id="cm-rarity"></div>
         <div class="cm-title" id="cm-title"></div>
         <div class="cm-content" id="cm-content"></div>
-        <button class="cm-close" onclick="closeCardModal()">收好卡牌</button>
+        <div class="cm-soul" id="cm-soul" style="display:none"></div>
+        <div class="cm-buttons">
+          <button class="cm-soul-btn" id="cm-soul-btn" onclick="toggleSoulQuestions()">🔮 靈魂拷問</button>
+          <button class="cm-close" onclick="closeCardModal()">收好卡牌</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1890,11 +1901,40 @@ function answerCoachQuiz(selected, correct, selectedText, question) {
   }, 500);
 }
 
+// ===== 靈魂拷問 =====
+const SOUL_QUESTIONS = {
+  'c1-1':['你上一次因為害怕被拒絕而沒有開口，是什麼時候？','如果「被拒絕」不會帶來任何損失，你今天最想向誰提出什麼請求？','你害怕的到底是「被拒絕」本身，還是「被拒絕後別人怎麼看你」？'],
+  'c1-2':['你現在最重要的目標，有寫下來嗎？還是只存在腦海裡？','如果今天只能完成一件事就必須離開，你會選哪一件？','你的目標有期限嗎？還是一直告訴自己「總有一天」？'],
+  'c1-3':['如果拿掉「必須成交」的壓力，你對工作的感覺會不會完全不同？','你是在「練習」，還是每次都在「表演」？','你有多久沒有純粹為了累積經驗而去做一件事，而不是為了結果？'],
+  'c2-1':['你的客戶真正困擾的事，你問過嗎？還是你只顧著介紹產品？','你上一次不帶目的地幫助一個人，是什麼時候？','如果你的客戶是你的家人，你會用現在這種方式跟他說話嗎？'],
+  'c2-2':['你的客戶買了你的產品後，人生會有什麼具體的改變？你說得出來嗎？','你在賣「產品規格」還是「客戶的美好未來」？','如果你的產品明天消失了，客戶會因為失去什麼而難過？'],
+  'c2-3':['你上次拜訪客戶前，花了多少時間了解對方？','你對你最重要的客戶，了解程度有多深？他小孩讀幾年級你知道嗎？','如果客戶比你更了解你的產品，你靠什麼贏得他的信任？'],
+  'c3-1':['你想說服的那個人，他最害怕失去的是什麼？你知道嗎？','你平常是用「你會得到什麼」還是「你會失去什麼」來說服別人？哪個更有效？','你自己做決定的時候，驅動你的是渴望還是恐懼？'],
+  'c3-2':['上一次別人說話時，你腦中完全沒有在想自己要回什麼的時刻，是什麼時候？','你身邊有沒有一個人，你從來沒有真正聽過他在說什麼？','如果你接下來一整天只能問問題不能陳述，你的人際關係會變好還是變差？'],
+  'c3-3':['你有沒有一個自己的親身故事，能讓客戶在 30 秒內理解你在賣什麼？','你上次被一個故事打動是什麼時候？那個故事為什麼有力量？','你的客戶會用什麼故事來描述跟你合作的經驗？'],
+  'c4-1':['你有沒有過客戶其實還沒準備好，但你急著要他簽單的經驗？後來怎麼了？','客戶信任你嗎？還是只是信任你的產品？這兩者有什麼不同？','你有沒有勇氣對一個「還不需要」你產品的客戶說「現在先不要買」？'],
+  'c4-2':['你在談判中，是急著給答案的那個人，還是耐心問問題的那個人？','你有沒有因為不耐煩而錯過了客戶真正想說的話？','你花在「準備問題」的時間，和花在「準備話術」的時間，比例是多少？'],
+  'c4-3':['你上一次在關鍵時刻閉嘴，讓沉默替你工作，是什麼時候？','沉默讓你焦慮嗎？為什麼你需要用說話來填滿每一個空白？','如果你在提出關鍵問題後多等 10 秒，結果會不會不同？'],
+  'c5-1':['你的老客戶上一次回購是什麼時候？如果很久了，為什麼？','你花在開發新客戶的時間，跟維繫舊客戶的時間，比例健康嗎？','如果你的客戶要把你推薦給朋友，他會怎麼形容你？'],
+  'c5-2':['你有沒有因為不好意思，而錯過了請滿意客戶幫你介紹的機會？','你上一次主動要求轉介紹是什麼時候？為什麼停了？','如果你的服務真的夠好，不要求轉介紹是不是反而對客戶的朋友不公平？'],
+  'c5-3':['你是先想著「我要得到什麼」，還是先想著「我能給什麼」？','你上一次讓一個人覺得自己很重要，是什麼時候？你怎麼做的？','你想讓別人喜歡你，但你有先真心喜歡他們嗎？'],
+  'c6-1':['你今天最重要但一直在逃避的事是什麼？為什麼不現在就做？','你每天早上的第一個小時，是在做最重要的事，還是在看手機？','如果你明天只有兩小時能工作，你會做什麼？那為什麼現在不先做那件事？'],
+  'c6-2':['你上一次因為不好意思拒絕而浪費了一整天，是什麼時候？','你的待辦清單上，有多少是別人的優先事項而不是你的？','如果你今天對三件事說「不」，你的人生會輕鬆多少？'],
+  'c6-3':['你現在做的事情，值得你的時薪嗎？','有哪些事你明知可以花錢請人做，卻一直自己做？為什麼？','你的時間和你的錢，哪一個更難賺回來？'],
+  'c7-1':['你上一次為了興趣而不是為了工作去學一樣新東西，是什麼時候？','如果你每天投資一小時學習，一年後的你會變成什麼樣的人？','你停止學習多久了？是什麼讓你停下來的？'],
+  'c7-2':['你身邊最常相處的五個人，他們正在把你往上拉還是往下拖？','你有沒有一個你仰望的人，但你從來沒有鼓起勇氣去認識他？','你在人脈經營中，是「給予者」還是「索取者」？'],
+  'c7-3':['你生命中有沒有一個人，他的一句話改變了你的方向？你有告訴他嗎？','如果你現在可以問一位你最敬佩的人一個問題，你會問什麼？','你有沒有想過，也許你已經是某個人的導師了，只是你還不知道？']
+};
+
+let currentModalCardId = null;
+
 // ===== 卡牌 Modal =====
 function openCardModal(cardId) {
   let card = null;
   STAGES.forEach(s => s.cards.forEach(c => { if (c.id === cardId) card = c; }));
   if (!card) return;
+
+  currentModalCardId = cardId;
 
   const overlay = document.getElementById('card-modal-overlay');
   const modal = document.getElementById('card-modal');
@@ -1905,6 +1945,13 @@ function openCardModal(cardId) {
   document.getElementById('cm-title').textContent = card.title;
   document.getElementById('cm-content').textContent = card.content;
 
+  // Reset soul questions
+  document.getElementById('cm-soul').style.display = 'none';
+  document.getElementById('cm-content').style.display = 'block';
+  const soulBtn = document.getElementById('cm-soul-btn');
+  soulBtn.textContent = '🔮 靈魂拷問';
+  soulBtn.style.display = SOUL_QUESTIONS[cardId] ? 'inline-block' : 'none';
+
   modal.className = `card-modal ${rarityClass}`;
   modal.classList.remove('flipping');
   overlay.classList.add('show');
@@ -1913,9 +1960,32 @@ function openCardModal(cardId) {
   setTimeout(() => modal.classList.add('flipping'), 300);
 }
 
+function toggleSoulQuestions() {
+  const soulEl = document.getElementById('cm-soul');
+  const contentEl = document.getElementById('cm-content');
+  const btn = document.getElementById('cm-soul-btn');
+
+  if (soulEl.style.display === 'none') {
+    const questions = SOUL_QUESTIONS[currentModalCardId];
+    if (!questions) return;
+    soulEl.innerHTML = questions.map((q, i) =>
+      `<div class="soul-q"><div class="soul-q-num">拷問 ${i+1}</div><div class="soul-q-text">${q}</div></div>`
+    ).join('');
+    soulEl.style.display = 'block';
+    contentEl.style.display = 'none';
+    btn.textContent = '📖 回到心法';
+  } else {
+    soulEl.style.display = 'none';
+    contentEl.style.display = 'block';
+    btn.textContent = '🔮 靈魂拷問';
+  }
+}
+
 function closeCardModal() {
   document.getElementById('card-modal-overlay').classList.remove('show');
   document.getElementById('card-modal').classList.remove('flipping');
+  document.getElementById('cm-soul').style.display = 'none';
+  document.getElementById('cm-content').style.display = 'block';
 }
 
 // ================================================================
