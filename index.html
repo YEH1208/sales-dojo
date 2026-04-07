@@ -1190,6 +1190,9 @@ function initUI() {
   document.getElementById('status-bar').style.display = 'flex';
   document.getElementById('nav-tabs').style.display = 'flex';
   document.getElementById('coach-bubble').style.display = 'block';
+  if (new URLSearchParams(location.search).has('voice')) {
+    document.getElementById('voice-bubble').style.display = 'block';
+  }
   updateStatusBar();
   renderMap();
   renderCollection();
