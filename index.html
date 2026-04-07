@@ -540,6 +540,32 @@ a{color:var(--gold);text-decoration:none}
   .skill-card{height:190px}
   .quiz-opt{padding:11px 14px}
 }
+
+/* ===== VOICE CHAT (大師兄) ===== */
+#voice-bubble{position:fixed;bottom:20px;left:20px;z-index:200;display:none}
+#voice-toggle{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--blue));display:flex;align-items:center;justify-content:center;font-size:1.8rem;color:#fff;box-shadow:0 4px 20px rgba(6,182,212,.4);transition:all .3s;animation:coach-pulse 3s infinite;border:none;cursor:pointer}
+#voice-toggle:hover{transform:scale(1.1)}
+#voice-toggle.active{background:linear-gradient(135deg,var(--fire),var(--orange));animation:voice-pulse 1s infinite}
+@keyframes voice-pulse{0%,100%{box-shadow:0 0 10px rgba(239,68,68,.4)}50%{box-shadow:0 0 30px rgba(239,68,68,.8)}}
+#voice-panel{display:none;position:absolute;bottom:76px;left:0;width:320px;background:var(--bg2);border:2px solid var(--cyan);border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,.5);overflow:hidden}
+#voice-panel.open{display:block;animation:slide-up .3s}
+.voice-header{background:linear-gradient(135deg,var(--cyan),var(--blue));padding:12px 16px;display:flex;align-items:center;gap:8px;color:#fff;font-weight:900}
+.voice-body{padding:16px;text-align:center}
+.voice-status{font-size:.85rem;color:var(--text2);margin-bottom:12px;min-height:20px}
+.voice-btn{padding:14px 32px;border-radius:50%;width:72px;height:72px;font-size:1.8rem;border:3px solid var(--cyan);background:var(--bg3);color:var(--cyan);cursor:pointer;transition:all .3s;display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px}
+.voice-btn:hover{background:rgba(6,182,212,.1)}
+.voice-btn.recording{border-color:var(--fire);color:var(--fire);animation:voice-pulse 1s infinite}
+.voice-btn.connecting{opacity:.6;cursor:wait}
+.voice-transcript{max-height:180px;overflow-y:auto;padding:8px;text-align:left;display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--card-border);margin-top:8px}
+.voice-msg{font-size:.8rem;padding:6px 10px;border-radius:10px;max-width:90%;line-height:1.5}
+.voice-msg.user{background:rgba(6,182,212,.15);color:var(--cyan);align-self:flex-end;border-bottom-right-radius:2px}
+.voice-msg.agent{background:var(--bg3);color:var(--text);align-self:flex-start;border-bottom-left-radius:2px}
+.voice-close{position:absolute;top:10px;right:12px;background:none;border:none;color:rgba(255,255,255,.7);font-size:1.2rem;cursor:pointer}
+@media(max-width:640px){
+  #voice-bubble{bottom:12px;left:12px}
+  #voice-toggle{width:54px;height:54px;font-size:1.5rem}
+  #voice-panel{width:calc(100vw - 24px);left:-4px}
+}
 </style>
 </head>
 <body>
@@ -643,6 +669,19 @@ a{color:var(--gold);text-decoration:none}
     <div class="chat-options" id="chat-options"></div>
   </div>
   <button id="coach-toggle" onclick="toggleChat()">🔥</button>
+</div>
+
+<!-- ===== VOICE CHAT (大師兄) ===== -->
+<div id="voice-bubble">
+  <div id="voice-panel">
+    <div class="voice-header">🎤 大師兄 - 語音修煉<button class="voice-close" onclick="toggleVoicePanel()">✕</button></div>
+    <div class="voice-body">
+      <div class="voice-status" id="voice-status">點擊麥克風開始對話</div>
+      <button class="voice-btn" id="voice-btn" onclick="toggleVoiceCall()">🎤</button>
+      <div class="voice-transcript" id="voice-transcript"></div>
+    </div>
+  </div>
+  <button id="voice-toggle" onclick="toggleVoicePanel()">🎤</button>
 </div>
 
 <!-- ===== LEVEL UP OVERLAY ===== -->
@@ -2405,6 +2444,151 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   })();
 });
+
+/* ===== VOICE CHAT - 大師兄 (只在 ?voice=1 時啟用) ===== */
+(function(){
+  const VOICE_ENABLED = new URLSearchParams(location.search).has('voice');
+  if (!VOICE_ENABLED) return;
+
+  const WORKER_URL = 'https://sales-dojo-voice.yeh651208.workers.dev';
+  let voiceRoom = null;
+  let voiceConnected = false;
+  let voicePanelOpen = false;
+
+  // Show voice bubble when game starts
+  const origStartGame = window.startGame;
+  if (origStartGame) {
+    window.startGame = function() {
+      origStartGame.apply(this, arguments);
+      document.getElementById('voice-bubble').style.display = 'block';
+    };
+  } else {
+    // Fallback: show after a delay
+    setTimeout(() => {
+      if (document.getElementById('voice-bubble')) {
+        document.getElementById('voice-bubble').style.display = 'block';
+      }
+    }, 2000);
+  }
+
+  window.toggleVoicePanel = function() {
+    voicePanelOpen = !voicePanelOpen;
+    const panel = document.getElementById('voice-panel');
+    panel.classList.toggle('open', voicePanelOpen);
+  };
+
+  window.toggleVoiceCall = async function() {
+    if (voiceConnected) {
+      disconnectVoice();
+    } else {
+      await connectVoice();
+    }
+  };
+
+  function setVoiceStatus(text) {
+    document.getElementById('voice-status').textContent = text;
+  }
+
+  function addTranscriptMsg(role, text) {
+    const container = document.getElementById('voice-transcript');
+    const div = document.createElement('div');
+    div.className = `voice-msg ${role}`;
+    div.textContent = (role === 'user' ? '🙋 ' : '🎓 ') + text;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  async function connectVoice() {
+    const btn = document.getElementById('voice-btn');
+    const toggle = document.getElementById('voice-toggle');
+    btn.classList.add('connecting');
+    setVoiceStatus('連線中...');
+
+    try {
+      // Load LiveKit SDK dynamically
+      if (!window.LivekitClient) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://unpkg.com/livekit-client@2/dist/livekit-client.umd.js';
+          script.onload = resolve;
+          script.onerror = reject;
+          document.head.appendChild(script);
+        });
+      }
+
+      // Get token from our Worker
+      const playerName = document.getElementById('display-name')?.textContent || 'Player';
+      const resp = await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ participant_name: playerName })
+      });
+
+      if (!resp.ok) throw new Error('Token request failed');
+      const { livekit_url, token } = await resp.json();
+
+      // Connect to LiveKit room
+      const { Room, RoomEvent, Track } = window.LivekitClient;
+      voiceRoom = new Room();
+
+      // Handle agent audio
+      voiceRoom.on(RoomEvent.TrackSubscribed, (track) => {
+        if (track.kind === Track.Kind.Audio) {
+          const el = track.attach();
+          el.id = 'voice-agent-audio';
+          document.body.appendChild(el);
+        }
+      });
+
+      // Handle transcript
+      voiceRoom.on(RoomEvent.DataReceived, (payload, participant, kind, topic) => {
+        if (topic === 'client_actions') {
+          try {
+            const data = JSON.parse(new TextDecoder().decode(payload));
+            if (data.type === 'client_action' && data.action === 'send_transcript') {
+              addTranscriptMsg(data.payload.role, data.payload.text);
+            }
+          } catch(e) {}
+        }
+      });
+
+      // Handle disconnect
+      voiceRoom.on(RoomEvent.Disconnected, () => {
+        voiceConnected = false;
+        btn.classList.remove('recording');
+        toggle.classList.remove('active');
+        setVoiceStatus('通話已結束，點擊重新連線');
+      });
+
+      await voiceRoom.connect(livekit_url, token);
+      await voiceRoom.localParticipant.setMicrophoneEnabled(true);
+
+      voiceConnected = true;
+      btn.classList.remove('connecting');
+      btn.classList.add('recording');
+      toggle.classList.add('active');
+      setVoiceStatus('🔴 對話中 — 直接開口說話！');
+
+    } catch(err) {
+      console.error('Voice connection error:', err);
+      btn.classList.remove('connecting');
+      setVoiceStatus('連線失敗，請稍後再試');
+    }
+  }
+
+  function disconnectVoice() {
+    if (voiceRoom) {
+      voiceRoom.disconnect();
+      voiceRoom = null;
+    }
+    const audioEl = document.getElementById('voice-agent-audio');
+    if (audioEl) audioEl.remove();
+    voiceConnected = false;
+    document.getElementById('voice-btn').classList.remove('recording');
+    document.getElementById('voice-toggle').classList.remove('active');
+    setVoiceStatus('點擊麥克風開始對話');
+  }
+})();
 </script>
 </body>
 </html>
