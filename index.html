@@ -543,10 +543,11 @@ a{color:var(--gold);text-decoration:none}
 
 /* ===== VOICE CHAT (大師兄) ===== */
 #voice-bubble{position:fixed;bottom:20px;left:20px;z-index:200;display:none}
-#voice-toggle{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--blue));display:flex;align-items:center;justify-content:center;font-size:1.8rem;color:#fff;box-shadow:0 4px 20px rgba(6,182,212,.4);transition:all .3s;animation:coach-pulse 3s infinite;border:none;cursor:pointer}
-#voice-toggle:hover{transform:scale(1.1)}
-#voice-toggle.active{background:linear-gradient(135deg,var(--fire),var(--orange));animation:voice-pulse 1s infinite}
-@keyframes voice-pulse{0%,100%{box-shadow:0 0 10px rgba(239,68,68,.4)}50%{box-shadow:0 0 30px rgba(239,68,68,.8)}}
+#voice-toggle{width:64px;height:64px;border-radius:50%;background:transparent;display:flex;align-items:center;justify-content:center;font-size:2.8rem;box-shadow:none;transition:all .3s;border:none;cursor:pointer;filter:drop-shadow(0 0 8px rgba(6,182,212,.6))drop-shadow(0 0 20px rgba(6,182,212,.3));animation:crystal-glow 3s infinite,torch-flicker .15s infinite alternate,torch-sway 2s ease-in-out infinite}
+#voice-toggle:hover{transform:scale(1.15);filter:drop-shadow(0 0 12px rgba(6,182,212,.8))drop-shadow(0 0 30px rgba(6,182,212,.5))}
+#voice-toggle.active{filter:drop-shadow(0 0 10px rgba(239,68,68,.7))drop-shadow(0 0 25px rgba(239,68,68,.4));animation:crystal-active 1.5s infinite,torch-flicker .15s infinite alternate}
+@keyframes crystal-glow{0%,100%{filter:drop-shadow(0 0 6px rgba(6,182,212,.5))drop-shadow(0 0 15px rgba(6,182,212,.2))}50%{filter:drop-shadow(0 0 12px rgba(6,182,212,.8))drop-shadow(0 0 30px rgba(6,182,212,.4))}}
+@keyframes crystal-active{0%,100%{filter:drop-shadow(0 0 8px rgba(239,68,68,.6))drop-shadow(0 0 20px rgba(239,68,68,.3))}50%{filter:drop-shadow(0 0 15px rgba(239,68,68,.9))drop-shadow(0 0 35px rgba(239,68,68,.5))}}
 #voice-panel{display:none;position:absolute;bottom:76px;left:0;width:320px;background:var(--bg2);border:2px solid var(--cyan);border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,.5);overflow:hidden}
 #voice-panel.open{display:block;animation:slide-up .3s}
 .voice-header{background:linear-gradient(135deg,var(--cyan),var(--blue));padding:12px 16px;display:flex;align-items:center;gap:8px;color:#fff;font-weight:900}
@@ -563,7 +564,7 @@ a{color:var(--gold);text-decoration:none}
 .voice-close{position:absolute;top:10px;right:12px;background:none;border:none;color:rgba(255,255,255,.7);font-size:1.2rem;cursor:pointer}
 @media(max-width:640px){
   #voice-bubble{bottom:12px;left:12px}
-  #voice-toggle{width:54px;height:54px;font-size:1.5rem}
+  #voice-toggle{width:54px;height:54px;font-size:2.2rem}
   #voice-panel{width:calc(100vw - 24px);left:-4px}
 }
 </style>
@@ -681,7 +682,7 @@ a{color:var(--gold);text-decoration:none}
       <div class="voice-transcript" id="voice-transcript"></div>
     </div>
   </div>
-  <button id="voice-toggle" onclick="toggleVoicePanel()">🎤</button>
+  <button id="voice-toggle" onclick="toggleVoicePanel()">🔮</button>
 </div>
 
 <!-- ===== LEVEL UP OVERLAY ===== -->
