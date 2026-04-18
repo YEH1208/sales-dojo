@@ -1,0 +1,7 @@
+# 音源檔案太大，不放 GitHub
+長版podcast/音源/*.m4a
+長版podcast/音源/*.mp3
+長版podcast/音源/*.wav
+
+# 智能卡圖片（較大）
+長版podcast/音源內容智能整理/*.png
